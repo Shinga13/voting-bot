@@ -1,4 +1,4 @@
-const { ButtonBuilder, EmbedBuilder, ButtonStyle, ActionRowBuilder } = require('discord.js');
+const { ButtonBuilder, EmbedBuilder, ButtonStyle, ActionRowBuilder, ModalBuilder, TextInputBuilder, TextInputStyle } = require('discord.js');
 const { store_settings, store_current_votes } = require('./storage.js');
 
 function create_guild_config(client, guild_id) {
@@ -17,7 +17,7 @@ function create_guild_setting(settings_object, guild_id) {
         relative_reminders: [],
         primary_role: null,
         secondary_roles: [],
-        registrations: [],
+        registrations: {},
         display_rationales: true,
     };
     store_settings(settings_object);
@@ -55,7 +55,7 @@ function create_vote_embed(vote_object) {
             { name: 'Vote starts on:', value: `<t:${vote_object.start_timestamp}:f>`, inline: true },
             { name: 'Vote ends on:', value: `<t:${vote_object.end_timestamp}:f>`, inline: true },
             { name: 'Vote status:', value: vote_status, inline: true },
-            { name: 'Number of votes cast:', value: `**${vote_object.ballots.length}**`, inline: true }
+            { name: 'Number of votes cast:', value: `**${Object.keys(vote_object.ballots).length}**`, inline: true }
         )
         .setTimestamp(vote_object.created_timestamp)
         .setFooter({ iconURL: vote_object.creator_icon, text: `${vote_object.creator_name} (@${vote_object.creator_id})`});
@@ -97,6 +97,74 @@ async function get_confirmation(message, interaction) {
     }
 }
 
+async function get_identification(identification_list, interaction) {
+    let button_col = 0;
+    let rows = [];
+    let current_row = new ActionRowBuilder();
+    rows.push(current_row);
+    let current_button;
+    if (identification_list.length > 25) {
+        identification_list = identification_list.slice(0, 25);
+    }
+    identification_list.forEach(id => {
+        current_button = new ButtonBuilder()
+            .setCustomId(id)
+            .setLabel(id)
+            .setStyle(ButtonStyle.Primary);
+        current_row.addComponents(current_button);
+        button_col++;
+        if (button_col >= 5) {
+            current_row = new ActionRowBuilder();
+            rows.push(current_row);
+            button_col = 0;
+        }
+    });
+    await interaction.reply({
+        content: 'Choose your identification:',
+        ephemeral: true,
+    });
+    const interaction_response = await interaction.editReply({components: rows});
+    try {
+        const confirmation = await interaction_response.awaitMessageComponent({ time: 60_000 });
+        confirmation.deferUpdate();
+        await interaction.editReply({
+            content: `**Identification:** ${confirmation.customId}`,
+            components: []
+        });
+        return confirmation.customId;
+    }
+    catch {
+        interaction.editReply({
+            content: 'Choose your identification: -- Cancelled after 1 minute of inactivity',
+            components: []
+        });
+        return null;
+    }
+}
+
+async function get_entry(title, message, modal_interaction) {
+    const modal = new ModalBuilder()
+        .setTitle(title)
+        .setCustomId('get_entry_modal')
+        .addComponents(
+            new ActionRowBuilder().addComponents(
+                new TextInputBuilder()
+                    .setCustomId('get_entry_text')
+                    .setLabel(message)
+                    .setStyle(TextInputStyle.Paragraph)
+            )
+        );
+    modal_interaction.showModal(modal);
+    try {
+        const modal_result = await modal_interaction.awaitModalSubmit({ time: 300_000, idle: 60_000 });
+        modal_result.deferUpdate();
+        return modal_result.fields.getTextInputValue('get_entry_text');
+    }
+    catch {
+        return null;
+    }
+}
+
 function delete_vote(title, interaction) {
     const vote_to_delete = interaction.client.active_votes[interaction.guildId][title];
     interaction.guild.channels.fetch(vote_to_delete.channel_id).then( channel => {
@@ -127,12 +195,24 @@ function pause_vote(title, interaction) {
     });
 }
 
+function update_vote_embed(vote, interaction) {
+    const new_embed = create_vote_embed(vote);
+    interaction.guild.channels.fetch(vote.channel_id).then( channel => {
+        channel.messages.fetch(vote.message_id).then( message => {
+            message.edit({ embeds: [new_embed] });
+        });
+    });
+}
+
 module.exports = {
     create_guild_config: create_guild_config,
     remove_guild_config: remove_guild_config,
     ensure_guild_config: ensure_guild_config,
     create_vote_embed: create_vote_embed,
     get_confirmation: get_confirmation,
+    get_identification: get_identification,
+    get_entry: get_entry,
     delete_vote: delete_vote,
-    pause_vote: pause_vote
+    pause_vote: pause_vote,
+    update_vote_embed: update_vote_embed
 }

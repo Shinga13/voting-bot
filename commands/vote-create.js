@@ -47,29 +47,44 @@ module.exports = {
             interaction.editReply({ content: 'Vote creation failed! End time must be after start time.' });
             return;
         }
+        let creator_name;
+        if (interaction.member.nickname !== null) {
+            creator_name = interaction.member.nickname;
+        }
+        else {
+            creator_name = interaction.user.displayName;
+        }
         current_guild_votes[param_title] = {
             title: param_title,
             subject: param_subject,
             start_timestamp: param_start,
             end_timestamp: param_end,
             creator_id: interaction.user.username,
-            creator_name: interaction.member.nickname,
+            creator_name: creator_name,
             creator_icon: interaction.member.displayAvatarURL(),
             created_timestamp: interaction.createdTimestamp,
             status_override: null,
             channel_id: null,
             message_id: null,
-            ballots: [],
-            voters: []
+            ballots: {},
+            voters: {}
         }
         const vote_embed = create_vote_embed(current_guild_votes[param_title]);
 
         const vote_button = new ButtonBuilder()
-            .setCustomId('embed_vote_button')
+            .setCustomId(`embed_vote_button=${param_title}`)
             .setLabel('Vote')
             .setStyle(ButtonStyle.Primary);
+        const show_button = new ButtonBuilder()
+            .setCustomId(`embed_show_button=${param_title}`)
+            .setLabel('Show Vote')
+            .setStyle(ButtonStyle.Secondary);
+        const delete_button = new ButtonBuilder()
+            .setCustomId(`embed_delete_button=${param_title}`)
+            .setLabel('Delete Vote')
+            .setStyle(ButtonStyle.Danger);
 
-        const button_row = new ActionRowBuilder().addComponents(vote_button);
+        const button_row = new ActionRowBuilder().addComponents(vote_button, show_button, delete_button);
 
         interaction.channel.send({ embeds: [vote_embed], components: [button_row]}).then(message => {
             current_guild_votes[param_title].channel_id = message.channelId;

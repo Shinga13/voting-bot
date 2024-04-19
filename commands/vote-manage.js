@@ -1,5 +1,6 @@
 const { SlashCommandBuilder, PermissionFlagsBits, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
-const { get_confirmation, delete_vote, pause_vote } = require('../scripts/backend.js');
+const { get_confirmation, delete_vote, pause_vote, create_vote_embed } = require('../scripts/backend.js');
+const { store_current_votes } = require('../scripts/storage.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -94,7 +95,59 @@ module.exports = {
 
                 }
                 else if (command === 'edit') {
-
+                    await interaction.reply({ content: 'Vote is being edited...', ephemeral: true });
+                    const client = interaction.client;
+                    const param_subject = interaction.options.getString('subject');
+                    const param_start = interaction.options.getInteger('start');
+                    const param_end = interaction.options.getInteger('end');
+                    const current_vote = client.active_votes[interaction.guildId][param_title];
+                    let response = '';
+                    if (param_subject !== null) {
+                        current_vote.subject = param_subject;
+                        response = response + 'Edited subject.\n';
+                    }
+                    if (param_start !== null && param_end !== null) {
+                        if (param_end - param_start <= 0) {
+                            response = response + 'Start and end time not edited: End time must be after start time.\n';
+                        }
+                        else {
+                            current_vote.start_timestamp = param_start;
+                            current_vote.end_timestamp = param_end;
+                            response = response + 'Edited start and end time.\n';
+                        }
+                    }
+                    else {
+                        if (param_start !== null) {
+                            if (current_vote.end_timestamp - param_start <= 0) {
+                                response = response + 'Start time not edited: Start time must be before end time.\n';
+                            }
+                            else {
+                                current_vote.start_timestamp = param_start;
+                                response = response + 'Edited start time.\n';
+                            }
+                        }
+                        if (param_end !== null) {
+                            if (param_end - current_vote.start_timestamp <= 0) {
+                                response = response + 'End time not edited: End time must be after start time.\n';
+                            }
+                            else {
+                                current_vote.end_timestamp = param_end;
+                                response = response + 'Edited end time.\n';
+                            }
+                        }
+                    }
+                    if (response === '') {
+                        response = 'No edits performed. Specify optional parameters to edit the vote.'
+                    }
+                    const vote_embed = create_vote_embed(current_vote);
+                    interaction.guild.channels.fetch(current_vote.channel_id).then( channel => {
+                        channel.messages.fetch(current_vote.message_id).then( message => {
+                            message.edit({ embeds: [vote_embed] });
+                            interaction.editReply({ content: response });
+                            // update scheduled tasks
+                            store_current_votes(interaction.client.active_votes);
+                        });
+                    });
                 }
             }
             else {

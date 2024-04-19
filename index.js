@@ -1,9 +1,10 @@
-
 const { Client, Collection, Events, GatewayIntentBits } = require('discord.js');
 const vote_create_command = require('./commands/vote-create.js');
 const vote_manage_command = require('./commands/vote-manage.js');
+const vote_settings_command = require('./commands/vote-settings.js');
 const { init_backend } = require('./scripts/setup.js');
-const { create_guild_setting, remove_guild_setting } = require('./scripts/backend.js')
+const { create_guild_setting, remove_guild_setting } = require('./scripts/backend.js');
+const { handle_embed_click } = require('./scripts/voting.js');
 const bot_token = process.env.BOT_TOKEN;
 
 const [active_votes, settings] = init_backend();
@@ -13,6 +14,7 @@ const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 client.commands = new Collection();
 client.commands.set(vote_create_command.data.name, vote_create_command);
 client.commands.set(vote_manage_command.data.name, vote_manage_command);
+client.commands.set(vote_settings_command.data.name, vote_settings_command);
 client.active_votes = active_votes;
 client.vote_settings = settings;
 
@@ -38,6 +40,12 @@ client.on(Events.InteractionCreate, async interaction => {
                 await interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true });
             }
         }
+    }
+    else if (interaction.isButton() && interaction.customId.startsWith('embed_')) {
+        const equal = interaction.customId.indexOf('=');
+        const button_type = interaction.customId.slice(0, equal);
+        const vote = interaction.customId.slice(equal + 1);
+        handle_embed_click(vote, button_type, interaction);
     }
 });
 
