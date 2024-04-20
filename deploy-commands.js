@@ -1,5 +1,7 @@
+const clientId = '';
+// Enter Application ID above ^^
+
 const { REST, Routes } = require('discord.js');
-const { clientId, guildId } = require('./config.json');
 const token = process.env.BOT_TOKEN;
 
 const vote_create_command = require('./commands/vote-create.js');
@@ -13,6 +15,6 @@ commands.push(vote_settings_command.data.toJSON())
 
 const rest = new REST().setToken(token);
 rest.put(
-    Routes.applicationGuildCommands(clientId, guildId),
+    Routes.applicationCommands(clientId),
     { body: commands },
 ).then(data => console.log(data));

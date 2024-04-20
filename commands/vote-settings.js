@@ -65,7 +65,9 @@ module.exports = {
         )
         .addSubcommand(subcommand =>
             subcommand.setName('show-rationales')
-            .setDescription('whether the rationales behind the votes should be posted after the vote ended')
+            .setDescription(
+                'whether the rationales behind the votes should be posted after the vote ended'
+            )
             .addBooleanOption(option =>
                 option.setName('enabled')
                 .setDescription('enable rationale display')
@@ -77,7 +79,9 @@ module.exports = {
             .setDescription('sets reminders relative to the voting period')
             .addStringOption(option =>
                 option.setName('reminders')
-                .setDescription('relative reminders, accepts numbers between 0 and 1 seperated by carets (^)')
+                .setDescription(
+                    'relative reminders, accepts numbers between 0 and 1 seperated by carets (^)'
+                )
                 .setRequired(true)
             )
         )
@@ -86,7 +90,10 @@ module.exports = {
             .setDescription('sets reminders absolute to the end of the voting period')
             .addStringOption(option =>
                 option.setName('reminders')
-                .setDescription('absolute reminders, seconds before end of voting period seperated by carets (^)')
+                .setDescription(
+                    'absolute reminders, seconds before end of voting period seperated by '
+                    + 'carets (^)'
+                )
                 .setRequired(true)
             )
         )
@@ -98,90 +105,217 @@ module.exports = {
             subcommand.setName('help')
             .setDescription('show command documentation')
         ),
-        async execute(interaction) {
-            const command = interaction.options.getSubcommand();
-            const settings = interaction.client.vote_settings[interaction.guildId];
+    async execute(interaction) {
+        const command = interaction.options.getSubcommand();
+        const settings = interaction.client.vote_settings[interaction.guildId];
 
-            // vote-settings help
-            if (command === 'help') {
+        // vote-settings help
+        if (command === 'help') {
+            interaction.reply({
+                content: 'Visit the [GitHub Repository](https://github.com/Shinga13/voting-bot) '
+                        + 'for command documentation.',
+                ephemeral: true
+            });
+        }
 
-            }
-
-            // vote-settings set-primary-role
-            else if (command === 'set-primary-role') {
-                const param_role = interaction.options.getRole('role', true);
-                const param_clear = interaction.options.getBoolean('clear');
-                if (param_clear === true) {
-                    if (settings.primary_role === param_role.id) {
-                        if (await get_confirmation(`Remove the primary role \`@${param_role.name}\`? *This will invalidate all current and future votes of users holding the current primary role!*`, interaction)) {
-                            settings.primary_role = null;
-                            store_settings(interaction.client.vote_settings);
-                        }
-                    }
-                    else {
-                        interaction.reply({ content: `Role \`@${param_role.name}\` not matching current primary role <@&${settings.primary_role}>.`, ephemeral: true});
+        // vote-settings set-primary-role
+        else if (command === 'set-primary-role') {
+            const param_role = interaction.options.getRole('role', true);
+            const param_clear = interaction.options.getBoolean('clear');
+            if (param_clear === true) {
+                if (settings.primary_role === param_role.id) {
+                    if (await get_confirmation(
+                        `Remove the primary role \`@${param_role.name}\`? *This will invalidate`
+                            + 'all current and future votes of users holding the current primary '
+                            + 'role!*',
+                        interaction)
+                    ) {
+                        settings.primary_role = null;
+                        store_settings(interaction.client.vote_settings);
                     }
                 }
-                else if (await get_confirmation(`Set \`@${param_role.name}\` as the primary role? *This will invalidate all current and future votes of users holding the current primary role!*`, interaction)) {
-                    settings.primary_role = param_role.id;
+                else {
+                    interaction.reply({
+                        content: `Role \`@${param_role.name}\` not matching current primary role `
+                                + `<@&${settings.primary_role}>.`,
+                        ephemeral: true
+                    });
+                }
+            }
+            else if (await get_confirmation(
+                    `Set \`@${param_role.name}\` as the primary role? *This will invalidate all`
+                        + ' current and future votes of users holding the current primary role!*',
+                    interaction)
+            ) {
+                settings.primary_role = param_role.id;
+                store_settings(interaction.client.vote_settings);
+            }
+        }
+
+        // vote-settings add-secondary-role
+        else if (command === 'add-secondary-role') {
+            const param_role = interaction.options.getRole('role', true);
+            if (settings.secondary_roles.includes(param_role.id)) {
+                interaction.reply({
+                    content: `Role \`@${param_role.name}\` is already a secondary role.`,
+                    ephemeral: true
+                });
+            }
+            else {
+                settings.secondary_roles.push(param_role.id);
+                interaction.reply({
+                    content: `Role \`@${param_role.name}\` added to secondary roles.`,
+                    ephemeral: true
+                });
+                store_settings(interaction.client.vote_settings);
+            }
+        }
+
+        // vote.settings remove-secondary-roles
+        else if (command === 'remove-secondary-role') {
+            const param_role = interaction.options.getRole('role', true);
+            if (settings.secondary_roles.includes(param_role.id)) {
+                if (await get_confirmation(
+                    `Remove \`@${param_role.name}\` from secondary roles? *This will invalidate `
+                        + 'all current and future votes of users indentifying with this role!*',
+                    interaction)
+                ) {
+                    settings.secondary_roles.splice(
+                        settings.secondary_roles.indexOf(param_role.id), 1
+                    );
                     store_settings(interaction.client.vote_settings);
                 }
             }
+            else {
+                interaction.reply({
+                    content: `Role \`@${param_role.name}\` is not a secondary role.`,
+                    ephemeral: true
+                });
+            }
+        }
 
-            // vote-settings add-secondary-role
-            else if (command === 'add-secondary-role') {
-                const param_role = interaction.options.getRole('role', true);
-                if (settings.secondary_roles.includes(param_role.id)) {
-                    interaction.reply({ content: `Role \`@${param_role.name}\` is already a secondary role.`, ephemeral: true});
-                }
-                else {
-                    settings.secondary_roles.push(param_role.id);
-                    interaction.reply({ content: `Role \`@${param_role.name}\` added to secondary roles.`, ephemeral: true});
+        // vote-settings register-voter
+        else if (command === 'register-voter') {
+            const param_voter = interaction.options.getUser('voter', true);
+            let param_ids = interaction.options.getString('ids', true).split('^');
+            param_ids = param_ids.map(el => el.trim());
+            param_ids = param_ids.filter(el => el.length > 0);
+            if (param_ids.length === 0) {
+                interaction.reply({ content: 'Invalid ids specified.', ephemeral: true });
+            }
+            else {
+                if (await get_confirmation(
+                    `Registering <@${param_voter.id}> as voter with identification(s):\n`
+                        + `- ${param_ids.join('\n- ')}\n*If user already registered, overwrite `
+                        + 'identification(s)*',
+                        interaction)
+                ) {
+                    settings.registrations[param_voter.id] = param_ids;
                     store_settings(interaction.client.vote_settings);
-                }
-            }
-            else if (command === 'remove-secondary-role') {
-                const param_role = interaction.options.getRole('role', true);
-                if (settings.secondary_roles.includes(param_role.id)) {
-                    if (await get_confirmation(`Remove \`@${param_role.name}\` from secondary roles? *This will invalidate all current and future votes of users indentifying with this role!*`, interaction)) {
-                        settings.secondary_roles.splice(settings.secondary_roles.indexOf(param_role.id), 1);
-                        store_settings(interaction.client.vote_settings);
-                    }
-                }
-                else {
-                    interaction.reply({ content: `Role \`@${param_role.name}\` is not a secondary role.`, ephemeral: true})
-                }
-            }
-
-            // vote-settings register-voter
-            else if (command === 'register-voter') {
-                const param_voter = interaction.options.getUser('voter', true);
-                let param_ids = interaction.options.getString('ids', true).split('^');
-                param_ids = param_ids.map(el => el.trim());
-                param_ids = param_ids.filter(el => el.length > 0);
-                if (param_ids.length === 0) {
-                    interaction.reply({ content: 'Invalid ids specified.', ephemeral: true });
-                }
-                else {
-                    if (await get_confirmation(`Registering <@${param_voter.id}> as voter with identification(s):\n- ${param_ids.join('\n- ')}\n*If user already registered, overwrite identification(s)*`, interaction)) {
-                        settings.registrations[param_voter.id] = param_ids;
-                        store_settings(interaction.client.vote_settings);
-                    }
-                }
-            }
-
-            // vote-settings un-register-voter
-            else if (command === 'un-register-voter') {
-                const param_voter = interaction.options.getUser('voter', true);
-                if (param_voter.id in settings.registrations) {
-                    if (await get_confirmation(`Un-register <@${param_voter.id}>? *This will invalidate all current and future votes of this user*`, interaction)) {
-                        delete settings.registrations[param_voter.id];
-                        store_settings(interaction.client.vote_settings);
-                    }
-                }
-                else {
-                    interaction.reply({ content: 'User is not registered.', ephemeral: true });
                 }
             }
         }
+
+        // vote-settings un-register-voter
+        else if (command === 'un-register-voter') {
+            const param_voter = interaction.options.getUser('voter', true);
+            if (param_voter.id in settings.registrations) {
+                if (await get_confirmation(
+                    `Un-register <@${param_voter.id}>? *This will invalidate all current and `
+                        + 'future votes of this user*',
+                        interaction)
+                ) {
+                    delete settings.registrations[param_voter.id];
+                    store_settings(interaction.client.vote_settings);
+                }
+            }
+            else {
+                interaction.reply({ content: 'User is not registered.', ephemeral: true });
+            }
+        }
+
+        // vote-settings show-rationales
+        else if (command === 'show-rationales') {
+            const param_rationales = interaction.options.getBoolean('enabled', true);
+            let message;
+            if (param_rationales) {
+                message = 'Anonymized rationales will be shown in chat when the vote ends.';
+            }
+            else {
+                message = 'Anonymized rationales will not be shown in chat when the vote ends.';
+            }
+            if (await get_confirmation(message, interaction)) {
+                settings.display_rationales = param_rationales;
+                store_settings(interaction.client.vote_settings);
+            }
+        }
+
+        // vote-settings set-relative-reminders
+        else if (command == 'set-relative-reminders') {
+            let param_reminders = interaction.options.getString('reminders', true).split('^');
+            param_reminders = param_reminders.map(el => el.trim());
+            param_reminders = param_reminders.filter(el => el.length > 0);
+            param_reminders = param_reminders.map(el => {
+                try {
+                    return parseFloat(el);
+                }
+                catch {
+                    return 0;
+                }
+            });
+            param_reminders = param_reminders.filter(el => (el > 0 && el < 1));
+            if (param_reminders.length === 0) {
+                interaction.reply({ content: 'Invalid reminders specified.', ephemeral: true });
+            }
+            else {
+                if (await get_confirmation(
+                    `Adding the following relative reminders:\n- ${param_reminders.join('\n- ')}\n`
+                        + '*Overwrites existing relative reminders.*',
+                    interaction)
+                ) {
+                    settings.relative_reminders = param_reminders;
+                    store_settings(interaction.client.vote_settings);
+                }
+            }
+        }
+
+        // vote-settings set-absolute-reminders
+        else if (command === 'set-absolute-reminders') {
+            let param_reminders = interaction.options.getString('reminders', true).split('^');
+            param_reminders = param_reminders.map(el => el.trim());
+            param_reminders = param_reminders.filter(el => el.length > 0);
+            param_reminders = param_reminders.map(el => {
+                try {
+                    return parseInt(el);
+                }
+                catch {
+                    return 0;
+                }
+            });
+            param_reminders = param_reminders.filter(el => el > 0);
+            if (param_reminders.length === 0) {
+                interaction.reply({ content: 'Invalid reminders specified.', ephemeral: true });
+            }
+            else {
+                if (await get_confirmation(
+                    `Adding the following absolute reminders (in seconds):\n`
+                        + `- ${param_reminders.join('\n- ')}\n*Overwrites existing relative `
+                        + 'reminders.*',
+                    interaction)
+                ) {
+                    settings.absolute_reminders = param_reminders;
+                    store_settings(interaction.client.vote_settings);
+                }
+            }
+        }
+
+        // vote-settings remove-reminders
+        else if (command === 'remove-reminders') {
+            if (await get_confirmation('Clear all reminders?', interaction)) {
+                settings.absolute_reminders = [];
+                settings.relative_reminders = [];
+                store_settings(interaction.client.vote_settings);
+            }
+        }
+    }
 }
