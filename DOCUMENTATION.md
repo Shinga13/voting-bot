@@ -78,6 +78,12 @@ Removes selected secondary role if it is a secondary role. Denies users with thi
 ### Parameters
 - `role` (required): Role to remove.
 
+## set-absolute-reminders
+### Description
+Sets reminders absolute to theend of the voting period. Active votes have to be edited or paused / unpaused for this to apply.
+### Paramters
+- `reminders` (required): Seconds before the voting ends seperated by carets (`^`). Value must be greater than 0. Votes ignore reminders that are longer than the voting period.
+
 ## set-primary-role
 ### Description
 Sets the primary role.
@@ -85,3 +91,19 @@ Sets the primary role.
 - `role` (required): Role to set.
 
 ## set-relative-reminders
+### Description
+Sets reminders relative to the voting period. Active votes have to be edited or paused / unpaused for this to apply.
+### Paramters
+- `reminders` (required): Numbers between 0 and 1 seperated by carets (`^`). 0 and 1 are not allowed. 0 represents the start time and date of the vote; 1 represents the end time of the vote.
+
+## show-rationales
+### Description
+Enables / disables display of anonymized vote rationales when vote ends.
+### Parameters
+- `enabled` (required): True / False. True enables the feature, False diables it.
+
+## un-register-voter
+### Description
+Manually unregisters a voter. Denies this user to vote. Already cast roles will become invalid when the vote ends.
+### Parameters
+- `voter` (required): User to unregister.
