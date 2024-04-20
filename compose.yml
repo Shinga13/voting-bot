@@ -1,0 +1,12 @@
+version: "3"
+
+services:
+  voting-bot:
+    image: voting-bot:${BOT_VERSION}
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: voting-bot-app
+    env_file: .env
+    volumes:
+      - ${DATA_FOLDER_PATH}:${VOTE_DATA_FOLDER_PATH}:rw
