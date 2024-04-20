@@ -5,7 +5,8 @@ const {
     pause_vote,
     create_vote_embed,
     close_vote,
-    schedule_vote_actions
+    schedule_vote_actions,
+    clear_scheduled_actions
 } = require('../scripts/backend.js');
 const { store_current_votes } = require('../scripts/storage.js');
 
@@ -182,10 +183,7 @@ module.exports = {
                         channel.messages.fetch(current_vote.message_id).then( message => {
                             message.edit({ embeds: [vote_embed] });
                             interaction.editReply({ content: response });
-                            client.schedule[guild_id][param_title].start.cancel();
-                            client.schedule[guild_id][param_title].end.cancel();
-                            delete client.schedule[guild_id][param_title];
-                            client.schedule[guild_id][param_title] = {};
+                            clear_scheduled_actions(current_vote.title, client, guild_id);
                             schedule_vote_actions(current_vote, client, guild_id);
                             store_current_votes(interaction.client.active_votes);
                         });

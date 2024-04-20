@@ -61,6 +61,10 @@ async function handle_embed_click(vote_title, button_type, interaction) {
             interaction.reply({ content: 'Voting has not started yet.', ephemeral: true});
             return;
         }
+        else if (current_vote.status_override === 'paused') {
+            interaction.reply({ content: 'Voting is paused.', ephemeral: true});
+            return;
+        }
         const identifications = get_valid_identifications(
             user_id,
             guild_id,

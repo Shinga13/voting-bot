@@ -552,5 +552,6 @@ module.exports = {
     get_valid_identifications: get_valid_identifications,
     schedule_vote_actions: schedule_vote_actions,
     purge_guild_scheduler: purge_guild_scheduler,
-    schedule_guild_votes: schedule_guild_votes
+    schedule_guild_votes: schedule_guild_votes,
+    clear_scheduled_actions: clear_scheduled_actions
 }
