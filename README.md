@@ -7,7 +7,7 @@ Functionality:
 - voting process is done through button interactions; cast votes can only be seen by the user casting it
 - votes can be shown, edited and deleted at will by the voter
 - vote automatically opens and closes at given times; outside the voting period, voting is not possible
-- results are dispayed once voting ends, with the option to show anonymized rationales
+- results are displayed once voting ends, with the option to show anonymized rationales
 - only users with specific roles can vote; users can be registered manually if using roles is not desired
 - reminders are sent when the vote opens and at specified times during voting
 
@@ -16,7 +16,7 @@ Functionality:
 
 Firstly, set up voting permissions. You can do this either by setting roles or manually registering the voters. Both methods also work alongside each other, with the manual registration taking priority over identification by role (if a user is manually registered, the bot does not attempt to identify the user by role). To set up role voting permissionss, start with setting a primary role using the [/vote-settings set-primary-role](./DOCUMENTATION.md#set-primary-role) command. Then add as many secondary roles as needed with the [/vote-settings add-secondary-role](./DOCUMENTATION.md#add-secondary-role) command. Now every user on the server that has the primary role and at least one secondary role is able to vote. The primary role enables the user to vote, while the secondary role acts as identification. A user may vote once for each secondary role they have. When the user votes the identification will be automatically selected, if the user has only one, or the user will be prompted to select one of their identifications. To manually register a voter, use the [/vote-settings register-voter](./DOCUMENTATION.md#register-voter) command. You can add as many identifications per user as you want; the user will be able to vote once per identification.
 
-Secondly, make sure that the bot is allowed to ping all roles to enable it ti actually notify the voters when the voting starts. You can also choose to edit a few settings:
+Secondly, make sure that the bot is allowed to ping all roles to enable it to actually notify the voters when the voting starts. You can also choose to edit a few settings:
 - Showing rationales: Use the [/vote-settings show-rationales](./DOCUMENTATION.md#show-rationales) command to enable / disable the feature. When enabled the rationales of all votes will be displayed publicily, grouped by decision and in anonymous form in the channel the voting took place as soon as the vote closes.
 - Setting reminders: Use either of the set-...-reminders commands to set reminders. These reminders will ping voters to remind them to cast their vote.
 
