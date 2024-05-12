@@ -69,7 +69,7 @@ client.on(Events.GuildCreate, async guild => {
 });
 
 client.on(Events.GuildDelete, async guild => {
-    remove_guild_config(client.vote_settings, guild.id);
+    remove_guild_config(client, guild.id);
     purge_guild_scheduler(client, guild.id);
 });
 

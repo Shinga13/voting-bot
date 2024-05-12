@@ -76,21 +76,21 @@ module.exports = {
         .setDescription('show command documentation')
     ),
     async execute(interaction) {
+        await interaction.deferReply({ ephemeral: true });
         const command = interaction.options.getSubcommand();
 
         // vote-manage help
         if (command === 'help') {
-            interaction.reply({
+            interaction.editReply({
                 content: 'Visit the [GitHub Repository](https://github.com/Shinga13/voting-bot) '
-                        + 'for command documentation.',
-                ephemeral: true
+                        + 'for command documentation.'
             });
         }
 
         // vote-manage purge
         else if (command === 'purge') {
             const msg = '**Delete all active votes?** *This cannot be undone!*';
-            if (await get_confirmation(msg, interaction)) {
+            if (await get_confirmation(msg, interaction, true)) {
                 for (const title of Object.keys(interaction.client.active_votes[interaction.guildId])) {
                     delete_vote(title, interaction);
                 }
@@ -102,7 +102,7 @@ module.exports = {
 
                 // vote-manage delete
                 if (command === 'delete') {
-                    if (await get_confirmation(`Delete vote \`${param_title}\`?`, interaction)) {
+                    if (await get_confirmation(`Delete vote \`${param_title}\`?`, interaction, true)) {
                         delete_vote(param_title, interaction);
                     }
                 }
@@ -110,12 +110,12 @@ module.exports = {
                 // vote-manage pause
                 else if (command === 'pause') {
                     pause_vote(param_title, interaction);
-                    interaction.reply( { content: 'Command executed.', ephemeral: true} );
+                    interaction.editReply( { content: 'Command executed.' });
                 }
 
                 // vote-manage end
                 else if (command === 'end') {
-                    if (await get_confirmation(`End vote \`${param_title}\` early?`, interaction)) {
+                    if (await get_confirmation(`End vote \`${param_title}\` early?`, interaction, true)) {
                         close_vote(
                             interaction.client.active_votes[interaction.guildId][param_title],
                             interaction.client,
@@ -126,10 +126,8 @@ module.exports = {
 
                 // vote-manage edit
                 else if (command === 'edit') {
-                    await interaction.reply({
-                        content: 'Vote is being edited...',
-                        ephemeral: true
-                    });
+                    await interaction.editReply({
+                        content: 'Vote is being edited...'});
                     const client = interaction.client;
                     const param_subject = interaction.options.getString('subject');
                     const param_start = interaction.options.getInteger('start');
@@ -191,10 +189,8 @@ module.exports = {
                 }
             }
             else {
-                interaction.reply({
-                    content: `Vote \`${param_title}\` does not exist.`,
-                    ephemeral: true
-                });
+                interaction.editReply({
+                    content: `Vote \`${param_title}\` does not exist.` });
             }
         }
     }

@@ -1,7 +1,7 @@
 {
-  "name": "test-bot",
-  "version": "1.0.0",
-  "description": "testbot for discord",
+  "name": "voting-bot",
+  "version": "1.0.1",
+  "description": "voting bot for discord",
   "main": "index.js",
   "scripts": {
     "bot": "node --env-file=.env index.js"

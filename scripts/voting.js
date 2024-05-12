@@ -9,10 +9,11 @@ const {
 const { store_current_votes } = require('./storage.js');
 
 async function handle_embed_click(vote_title, button_type, interaction) {
+    await interaction.deferReply({ ephemeral: true });
     const client = interaction.client;
     const guild_id = interaction.guildId;
     if (!(vote_title in client.active_votes[guild_id])) {
-        interaction.reply({ content: 'Invalid action. Try again on valid vote.', ephemeral: true });
+        interaction.editReply({ content: 'Invalid action. Try again on valid vote.' });
         return;
     }
     const current_vote = client.active_votes[guild_id][vote_title];
@@ -24,7 +25,7 @@ async function handle_embed_click(vote_title, button_type, interaction) {
             let identifications = Object.keys(current_vote.voters[user_id]);
             let selected_id;
             if (identifications.length === 0) {
-                interaction.reply({ content: 'You did not vote yet.', ephemeral: true });
+                interaction.editReply({ content: 'You did not vote yet.' });
                 return;
             }
             else if (identifications.length > 1) {
@@ -35,9 +36,8 @@ async function handle_embed_click(vote_title, button_type, interaction) {
             }
             else {
                 selected_id = identifications[0];
-                await interaction.reply({
-                    content: `**Identification:** ${selected_id}`,
-                    ephemeral: true
+                await interaction.editReply({
+                    content: `**Identification:** ${selected_id}`
                 });
             }
             const ballot = current_vote.ballots[current_vote.voters[user_id][selected_id]];
@@ -49,7 +49,7 @@ async function handle_embed_click(vote_title, button_type, interaction) {
             });
         }
         else {
-            interaction.reply({ content: 'You did not vote yet.', ephemeral: true });
+            interaction.editReply({ content: 'You did not vote yet.' });
             return;
         }
     }
@@ -58,11 +58,11 @@ async function handle_embed_click(vote_title, button_type, interaction) {
     else if (button_type === 'embed_vote_button') {
         const now = Date.now() / 1000;
         if (now < current_vote.start_timestamp) {
-            interaction.reply({ content: 'Voting has not started yet.', ephemeral: true});
+            interaction.editReply({ content: 'Voting has not started yet.' });
             return;
         }
         else if (current_vote.status_override === 'paused') {
-            interaction.reply({ content: 'Voting is paused.', ephemeral: true});
+            interaction.editReply({ content: 'Voting is paused.' });
             return;
         }
         const identifications = get_valid_identifications(
@@ -72,7 +72,7 @@ async function handle_embed_click(vote_title, button_type, interaction) {
             interaction.member
         );
         if (identifications.length < 1) {
-            interaction.reply({ content: 'You are not authorized to vote!', ephemeral: true});
+            interaction.editReply({ content: 'You are not authorized to vote!' });
             return;
         }
         let selected_id;
@@ -84,9 +84,8 @@ async function handle_embed_click(vote_title, button_type, interaction) {
         }
         else {
             selected_id = identifications[0];
-            await interaction.reply({
-                content: `**Identification:** ${selected_id}`,
-                ephemeral: true
+            await interaction.editReply({
+                content: `**Identification:** ${selected_id}`
             });
         }
 
@@ -207,7 +206,7 @@ async function handle_embed_click(vote_title, button_type, interaction) {
             let identifications = Object.keys(current_vote.voters[user_id]);
             let selected_id;
             if (identifications.length === 0) {
-                interaction.reply({ content: 'You did not vote yet.', ephemeral: true });
+                interaction.editReply({ content: 'You did not vote yet.' });
                 return;
             }
             else if (identifications.length > 1) {
@@ -218,9 +217,8 @@ async function handle_embed_click(vote_title, button_type, interaction) {
             }
             else {
                 selected_id = identifications[0];
-                await interaction.reply({
-                    content: `**Identification:** ${selected_id}`,
-                    ephemeral: true
+                await interaction.editReply({
+                    content: `**Identification:** ${selected_id}`
                 });
             }
             const msg = `Are you sure you want to **delete** your vote for \`${selected_id}\`?`;
@@ -233,7 +231,7 @@ async function handle_embed_click(vote_title, button_type, interaction) {
             return;
         }
         else {
-            interaction.reply({ content: 'You did not vote yet.', ephemeral: true });
+            interaction.editReply({ content: 'You did not vote yet.' });
             return;
         }
     }

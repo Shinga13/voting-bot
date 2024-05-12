@@ -156,9 +156,8 @@ async function get_identification(identification_list, interaction) {
             button_col = 0;
         }
     });
-    await interaction.reply({
-        content: 'Choose your identification:',
-        ephemeral: true,
+    await interaction.editReply({
+        content: 'Choose your identification:'
     });
     const interaction_response = await interaction.editReply({components: rows});
     try {
