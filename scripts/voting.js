@@ -128,13 +128,7 @@ async function handle_embed_click(vote_title, button_type, interaction) {
         let selection;
         try {
             selection = await interaction_response.awaitMessageComponent({ time: 60_000 });
-            await selection.deferUpdate()
             ballot.decision = selection.customId;
-            await interaction.editReply({
-                content: `${edit_text}**Identification:** ${selected_id}\n`
-                        + `**Decision:** *${ballot.decision}*`,
-                components: []
-            });
         }
         catch {
             await interaction.editReply({
