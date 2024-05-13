@@ -196,7 +196,7 @@ async function get_entry(title, message, modal_interaction) {
             time: 300_000,
             idle: 60_000
         });
-        modal_result.deferUpdate();
+        await modal_result.deferUpdate();
         return modal_result.fields.getTextInputValue('get_entry_text');
     }
     catch {
