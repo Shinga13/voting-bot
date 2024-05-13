@@ -269,7 +269,7 @@ function schedule_vote_actions(vote, client, guild_id) {
     }
     const schedule_array = [];
     const user_list = Object.keys(client.vote_settings[guild_id].registrations);
-    const role_list = client.vote_settings[guild_id].secondary_roles;
+    const role_list = [client.vote_settings[guild_id].primary_role];
     let reminder_timestamp;
     let reminder_job;
     if (settings.absolute_reminders.length > 0) {
@@ -497,7 +497,7 @@ function create_archived_embed(archived_vote) {
 function open_vote(vote, client, guild_id) {
     update_vote_embed(vote, client, guild_id);
     const user_list = Object.keys(client.vote_settings[guild_id].registrations);
-    const role_list = client.vote_settings[guild_id].secondary_roles;
+    const role_list = [client.vote_settings[guild_id].primary_role];
     ping_users(
         user_list,
         role_list,
