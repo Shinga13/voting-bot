@@ -9,7 +9,13 @@ const {
 const { store_current_votes } = require('./storage.js');
 
 async function handle_embed_click(vote_title, button_type, interaction) {
-    await interaction.deferReply({ ephemeral: true });
+    try {
+        await interaction.deferReply({ ephemeral: true });
+    }
+    catch (e) {
+        console.log(e);
+        return;
+    }
     const client = interaction.client;
     const guild_id = interaction.guildId;
     if (!(vote_title in client.active_votes[guild_id])) {
