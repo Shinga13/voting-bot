@@ -1,4 +1,4 @@
-const { Client, Collection, Events, GatewayIntentBits } = require('discord.js');
+const { Client, Collection, Events, GatewayIntentBits, MessageFlags } = require('discord.js');
 const vote_create_command = require('./commands/vote-create.js');
 const vote_manage_command = require('./commands/vote-manage.js');
 const vote_settings_command = require('./commands/vote-settings.js');
@@ -46,11 +46,12 @@ client.on(Events.InteractionCreate, async interaction => {
             if (interaction.replied || interaction.deferred) {
                 await interaction.followUp({
                     content: 'There was an error while executing this command!',
-                    ephemeral: true
+                    flags: MessageFlags.Ephemeral
                 });
             } else {
                 await interaction.reply({
-                    content: 'There was an error while executing this command!', ephemeral: true
+                    content: 'There was an error while executing this command!',
+                    flags: MessageFlags.Ephemeral
                 });
             }
         }

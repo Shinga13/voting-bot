@@ -1,4 +1,4 @@
-const { ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+const { ActionRowBuilder, ButtonBuilder, ButtonStyle, MessageFlags } = require('discord.js');
 const {
     get_identification,
     get_entry,
@@ -9,13 +9,7 @@ const {
 const { store_current_votes } = require('./storage.js');
 
 async function handle_embed_click(vote_title, button_type, interaction) {
-    try {
-        await interaction.deferReply({ ephemeral: true });
-    }
-    catch (e) {
-        console.log(e);
-        return;
-    }
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
     const client = interaction.client;
     const guild_id = interaction.guildId;
     if (!(vote_title in client.active_votes[guild_id])) {
@@ -51,7 +45,7 @@ async function handle_embed_click(vote_title, button_type, interaction) {
                 content: '__**Ballot**__\n**Identification:** '
                         + `${selected_id}\n**Decision:** *${ballot.decision}*\n`
                         + `**Rationale:** ${ballot.rationale}`,
-                ephemeral: true
+                flags: MessageFlags.Ephemeral
             });
         }
         else {

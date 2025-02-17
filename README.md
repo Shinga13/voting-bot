@@ -7,7 +7,7 @@ Functionality:
 - voting process is done through button interactions; cast votes can only be seen by the user casting it
 - votes can be shown, edited and deleted at will by the voter
 - vote automatically opens and closes at given times; outside the voting period, voting is not possible
-- results are displayed once voting ends, with the option to show anonymized rationales
+- results are dispayed once voting ends, with the option to show anonymized rationales
 - only users with specific roles can vote; users can be registered manually if using roles is not desired
 - reminders are sent when the vote opens and at specified times during voting
 
@@ -28,6 +28,7 @@ To see all commands, visit the [Documentation](./DOCUMENTATION.md).
 ### Environment variables
 Create an `.env` file with the following variables:
 - `BOT_TOKEN`: This is the token the bot uses to log in to discord.
+- `APP_ID`: Id of the discord application (required to register commands).
 - `DATA_PATH`: Path to the folder that data will be stored; used by the app, may be relative
 - (for Docker) `BOT_VERSION`: Used to tag the image
 - (for Docker) `VOTE_DATA_FOLDER_PATH` (inside) and `DATA_FOLDER_PATH` (outside): the outside path on the hosts filesystem will be mounted as the inside path in the container

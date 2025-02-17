@@ -1,8 +1,9 @@
 const {
-    ButtonBuilder,
-    EmbedBuilder,
-    ButtonStyle,
     ActionRowBuilder,
+    ButtonBuilder,
+    ButtonStyle,
+    EmbedBuilder,
+    MessageFlags,
     ModalBuilder,
     TextInputBuilder,
     TextInputStyle
@@ -110,7 +111,7 @@ async function get_confirmation(message, interaction, edit=false) {
     else {
         interaction_response = await interaction.reply({
             content: message,
-            ephemeral: true,
+            flags: MessageFlags.Ephemeral,
             components: [button_row]
         });
     }
@@ -194,7 +195,7 @@ async function get_entry(title, message, modal_interaction) {
     try {
         const modal_result = await modal_interaction.awaitModalSubmit({
             time: 300_000,
-            idle: 60_000
+            idle: 60_000,
         });
         await modal_result.deferUpdate();
         return modal_result.fields.getTextInputValue('get_entry_text');
@@ -270,18 +271,23 @@ function schedule_vote_actions(vote, client, guild_id) {
     const schedule_array = [];
     const user_list = Object.keys(client.vote_settings[guild_id].registrations);
     const role_list = [client.vote_settings[guild_id].primary_role];
+    let reminder_message;
     let reminder_timestamp;
     let reminder_job;
     if (settings.absolute_reminders.length > 0) {
         for (let abs_reminder of settings.absolute_reminders) {
             reminder_timestamp = vote.end_timestamp - abs_reminder;
             if (now < reminder_timestamp) {
+                reminder_message = (
+                    `VOTE: **${vote.title}**\nReminder to cast your vote. Voting ends `
+                    + `<t:${vote.end_timestamp}:R>.`
+                );
                 reminder_job = schedule.scheduleJob(
                     new Date(reminder_timestamp * 1000),
                     () => ping_users(
                         user_list,
                         role_list,
-                        `Reminder to cast your vote. Voting ends <t:${vote.end_timestamp}:R>.`,
+                        reminder_message,
                         client,
                         guild_id,
                         vote.channel_id,
@@ -297,12 +303,16 @@ function schedule_vote_actions(vote, client, guild_id) {
         for (let rel_reminder of settings.relative_reminders) {
             reminder_timestamp = vote.start_timestamp + vote_timedelta * rel_reminder;
             if (now < reminder_timestamp) {
+                reminder_message = (
+                    `VOTE: **${vote.title}**\nReminder to cast your vote. Voting ends `
+                    + `<t:${vote.end_timestamp}:R>.`
+                );
                 reminder_job = schedule.scheduleJob(
                     new Date(reminder_timestamp * 1000),
                     () => ping_users(
                         user_list,
                         role_list,
-                        `Reminder to cast your vote. Voting ends <t:${vote.end_timestamp}:R>.`,
+                        reminder_message,
                         client,
                         guild_id,
                         vote.channel_id,
@@ -410,7 +420,8 @@ async function close_vote(vote, client, guild_id) {
     );
     if (client.vote_settings[guild_id].display_rationales) {
         channel.send({
-            content: `__Vote Rationales:__\n\n**Yes:**\n${join_rationales(yes_rationales)}\n`
+            content: `VOTE: **${vote.title}**\n__Vote Rationales:__\n\n`
+                    + `**Yes:**\n${join_rationales(yes_rationales)}\n`
                     + `**No:**\n${join_rationales(no_rationales)}\n`
                     + `**Abstain:**\n${join_rationales(abstain_rationales)}`,
             reply: { messageReference: vote.message_id }
@@ -498,10 +509,14 @@ function open_vote(vote, client, guild_id) {
     update_vote_embed(vote, client, guild_id);
     const user_list = Object.keys(client.vote_settings[guild_id].registrations);
     const role_list = [client.vote_settings[guild_id].primary_role];
+    const open_message = (
+        `VOTE: **${vote.title}**\nVoting has opened! Please cast your vote within the specified `
+        + 'timeframe.'
+    );
     ping_users(
         user_list,
         role_list,
-        'Voting has opened! Please cast your vote within the specified timeframe.',
+        open_message,
         client,
         guild_id,
         vote.channel_id,
@@ -546,6 +561,7 @@ module.exports = {
     delete_vote: delete_vote,
     pause_vote: pause_vote,
     close_vote: close_vote,
+    open_vote: open_vote,
     update_vote_embed: update_vote_embed,
     ping_users: ping_users,
     get_valid_identifications: get_valid_identifications,

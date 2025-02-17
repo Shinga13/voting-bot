@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
+const { MessageFlags, SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
 const { get_confirmation } = require('../scripts/backend.js');
 const { store_settings } = require('../scripts/storage.js');
 
@@ -106,7 +106,7 @@ module.exports = {
             .setDescription('show command documentation')
         ),
     async execute(interaction) {
-        await interaction.deferReply({ ephemeral: true });
+        await interaction.deferReply({ flags: MessageFlags.Ephemeral });
         const command = interaction.options.getSubcommand();
         const settings = interaction.client.vote_settings[interaction.guildId];
 

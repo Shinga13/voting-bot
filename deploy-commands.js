@@ -1,8 +1,6 @@
-const clientId = '';
-// Enter Application ID above ^^
-
 const { REST, Routes } = require('discord.js');
 const token = process.env.BOT_TOKEN;
+const clientId = process.env.APP_ID;
 
 const vote_create_command = require('./commands/vote-create.js');
 const vote_manage_command = require('./commands/vote-manage.js');

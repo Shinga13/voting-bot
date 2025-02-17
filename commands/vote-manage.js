@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, PermissionFlagsBits} = require('discord.js');
+const { MessageFlags, SlashCommandBuilder, PermissionFlagsBits} = require('discord.js');
 const {
     get_confirmation,
     delete_vote,
@@ -15,7 +15,6 @@ module.exports = {
     .setName('vote-manage')
     .setDescription('manage existing votes')
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageEvents)
-    .setDMPermission(false)
     .addSubcommand(subcommand => 
         subcommand.setName('delete')
         .setDescription('delete vote including all stored data')
@@ -60,14 +59,14 @@ module.exports = {
             .setDescription('subject of the vote')
             .setRequired(false)
         ))
-        .addIntegerOption(option => (
+        .addStringOption(option => (
             option.setName('start')
-            .setDescription('unix timestamp of when the vote should start')
+            .setDescription('ISO 8601 date and time of the vote start. Format: "YYYY-MM-DDThh:mm:ss"')
             .setRequired(false)
         ))
-        .addIntegerOption(option => (
+        .addStringOption(option => (
             option.setName('end')
-            .setDescription('unix timestamp of when the vote should end')
+            .setDescription('ISO 8601 date and time of the vote end. Format: "YYYY-MM-DDThh:mm:ss"')
             .setRequired(false)
         ))
     )
@@ -76,7 +75,7 @@ module.exports = {
         .setDescription('show command documentation')
     ),
     async execute(interaction) {
-        await interaction.deferReply({ ephemeral: true });
+        await interaction.deferReply({ flags: MessageFlags.Ephemeral });
         const command = interaction.options.getSubcommand();
 
         // vote-manage help
@@ -130,62 +129,66 @@ module.exports = {
                         content: 'Vote is being edited...'});
                     const client = interaction.client;
                     const param_subject = interaction.options.getString('subject');
-                    const param_start = interaction.options.getInteger('start');
-                    const param_end = interaction.options.getInteger('end');
+                    const param_start = interaction.options.getString('start');
+                    const param_end = interaction.options.getString('end');
                     const guild_id = interaction.guildId;
                     const current_vote = client.active_votes[guild_id][param_title];
                     let response = '';
+                    let perform_edit = false;
                     if (param_subject !== null) {
                         current_vote.subject = param_subject;
                         response = response + 'Edited subject.\n';
+                        perform_edit = true;
                     }
-                    if (param_start !== null && param_end !== null) {
-                        if (param_end - param_start <= 0) {
-                            response = response + 'Start and end time not edited: End time must'
-                                    + 'be after start time.\n';
+                    if (param_start !== null) {
+                        start_time = Date.parse(param_start) / 1000;
+                        if (isNaN(start_time)) {
+                            response = response + 'Start time not edited: Invalid formatting.';
+                        }
+                        else if (current_vote.end_timestamp - start_time <= 0) {
+                            response = response + 'Start time not edited: Start time must be '
+                                    + 'before end time.\n';
                         }
                         else {
-                            current_vote.start_timestamp = param_start;
-                            current_vote.end_timestamp = param_end;
-                            response = response + 'Edited start and end time.\n';
+                            current_vote.start_timestamp = start_time;
+                            response = response + 'Edited start time.\n';
+                            perform_edit = true;
                         }
+                    }
+                    if (param_end !== null) {
+                        end_time = Date.parse(param_end) / 1000;
+                        if (isNaN(end_time)) {
+                            response = response + 'End time not edited: Invalid formatting.';
+                        }
+                        else if (end_time - current_vote.start_timestamp <= 0) {
+                            response = response + 'End time not edited: End time must be after '
+                                    + 'start time.\n';
+                        }
+                        else {
+                            current_vote.end_timestamp = end_time;
+                            response = response + 'Edited end time.\n';
+                            perform_edit = true;
+                        }
+                    }
+                    if (perform_edit) {
+                        const vote_embed = create_vote_embed(current_vote);
+                        interaction.guild.channels.fetch(current_vote.channel_id).then( channel => {
+                            channel.messages.fetch(current_vote.message_id).then( message => {
+                                message.edit({ embeds: [vote_embed] });
+                                interaction.editReply({ content: response });
+                                clear_scheduled_actions(current_vote.title, client, guild_id);
+                                schedule_vote_actions(current_vote, client, guild_id);
+                                store_current_votes(interaction.client.active_votes);
+                            });
+                        });
                     }
                     else {
-                        if (param_start !== null) {
-                            if (current_vote.end_timestamp - param_start <= 0) {
-                                response = response + 'Start time not edited: Start time must be '
-                                        + 'before end time.\n';
-                            }
-                            else {
-                                current_vote.start_timestamp = param_start;
-                                response = response + 'Edited start time.\n';
-                            }
+                        if (response === '') {
+                            response = 'No edits performed. Specify optional parameters to edit '
+                                    + 'the vote.';
                         }
-                        if (param_end !== null) {
-                            if (param_end - current_vote.start_timestamp <= 0) {
-                                response = response + 'End time not edited: End time must be after '
-                                        + 'start time.\n';
-                            }
-                            else {
-                                current_vote.end_timestamp = param_end;
-                                response = response + 'Edited end time.\n';
-                            }
-                        }
+                        interaction.editReply({ content: response });
                     }
-                    if (response === '') {
-                        response = 'No edits performed. Specify optional parameters to edit the '
-                                + 'vote.';
-                    }
-                    const vote_embed = create_vote_embed(current_vote);
-                    interaction.guild.channels.fetch(current_vote.channel_id).then( channel => {
-                        channel.messages.fetch(current_vote.message_id).then( message => {
-                            message.edit({ embeds: [vote_embed] });
-                            interaction.editReply({ content: response });
-                            clear_scheduled_actions(current_vote.title, client, guild_id);
-                            schedule_vote_actions(current_vote, client, guild_id);
-                            store_current_votes(interaction.client.active_votes);
-                        });
-                    });
                 }
             }
             else {

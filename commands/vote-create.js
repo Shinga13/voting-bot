@@ -1,14 +1,16 @@
 const {
+    ActionRowBuilder,
     ButtonBuilder,
+    ButtonStyle,
+    MessageFlags,
     SlashCommandBuilder,
     PermissionFlagsBits,
-    ButtonStyle,
-    ActionRowBuilder
 } = require('discord.js');
 const { store_current_votes } = require('../scripts/storage.js');
 const {
     ensure_guild_config,
     create_vote_embed,
+    open_vote,
     schedule_vote_actions
 } = require('../scripts/backend.js');
 
@@ -26,31 +28,51 @@ module.exports = {
             .setDescription('subject of the vote')
             .setRequired(true)
         ))
-        .addIntegerOption(option => (
+        .addStringOption(option => (
             option.setName('start')
-            .setDescription('unix timestamp of when the vote should start')
+            .setDescription('ISO 8601 date and time of the vote start. Format: "YYYY-MM-DDThh:mm:ss"')
             .setRequired(true)
         ))
-        .addIntegerOption(option => (
+        .addStringOption(option => (
             option.setName('end')
-            .setDescription('unix timestamp of when the vote should end')
+            .setDescription('ISO 8601 date and time of the vote end. Format: "YYYY-MM-DDThh:mm:ss"')
             .setRequired(true)
         ))
-        .setDefaultMemberPermissions(PermissionFlagsBits.ManageEvents)
-        .setDMPermission(false),
+        .setDefaultMemberPermissions(PermissionFlagsBits.ManageEvents),
 
 	async execute(interaction) {
-        await interaction.reply({ content: 'New vote is being created...', ephemeral: true });
+        await interaction.reply({
+            content: 'New vote is being created...',
+            flags: MessageFlags.Ephemeral
+        });
         const client = interaction.client;
         ensure_guild_config(client, interaction.guildId);
         const param_title = interaction.options.getString('title', true);
         const param_subject = interaction.options.getString('subject', true);
-        const param_start = interaction.options.getInteger('start', true);
-        const param_end = interaction.options.getInteger('end', true);
+        let param_start = Date.parse(interaction.options.getString('start', true));
+        if (!isNaN(param_start)) {
+            param_start = param_start / 1000
+        }
+        let param_end = Date.parse(interaction.options.getString('end', true));
+        if (!isNaN(param_end)) {
+            param_end = param_end / 1000
+        }
         const current_guild_votes = client.active_votes[interaction.guildId];
         if (param_title in current_guild_votes) {
             interaction.editReply({
                 content: 'Vote creation failed! Please choose a different title.'
+            });
+            return;
+        }
+        else if (isNaN(param_start)) {
+            interaction.editReply({
+                content: 'Vote creation failed! Start time is not a valid date and time.'
+            });
+            return;
+        }
+        else if (isNaN(param_end)) {
+            interaction.editReply({
+                content: 'Vote creation failed! End time is not a valid date and time.'
             });
             return;
         }
@@ -119,6 +141,9 @@ module.exports = {
             current_vote.channel_id = message.channelId;
             current_vote.message_id = message.id;
             store_current_votes(client.active_votes);
+            if (Date.now() / 1000 > current_vote.start_timestamp) {
+                open_vote(current_vote, client, interaction.guildId)
+            }
         });
         client.schedule[interaction.guildId][param_title] = {};
         schedule_vote_actions(current_vote, client, interaction.guildId);

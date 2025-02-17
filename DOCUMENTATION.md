@@ -5,8 +5,8 @@ is converted to an "archived vote", showing the result of the voting and disabli
 ### Parameters
 - `title` (required): Title of the vote, will be shown at the top of the embed. Must be unique among the currently active votes, as it is used to reference the vote internally and in commands.
 - `subject`(required): Description or question of the vote shown on the embed. This text informs voters what they are voting for. May contain links or other Discord formatting.
-- `start` (required): Time and date at which the vote will be opened. Given in "Unix Seconds". May be in the past, in which case the vote will be opened instantly.
-- `end` (required): Time and date at which the vote will end. Given in "Unix Seconds". Must be after the given start time and in the future.
+- `start` (required): Time and date at which the vote will be opened. Given as ISO 8601 formatted time string. May be in the past, in which case the vote will be opened instantly.
+- `end` (required): Time and date at which the vote will end.Given as ISO 8601 formatted time string. Must be after the given start time and in the future.
 
 # vote-manage
 
@@ -25,8 +25,8 @@ Edit an active vote. The title cannot be edited. When the start and / or end tim
 ### Parameters
 - `title` (required): Title of the vote to edit.
 - `subject`(optional): New description or question of the vote shown on the embed.
-- `start` (optional): New time and date at which the vote will start. Given in "Unix Seconds".
-- `end` (optional): New time and date at which the vote will end. Given in "Unix Seconds". Must be after the given start time and in the future.
+- `start` (optional): New time and date at which the vote will start. Given as ISO 8601 formatted time string.
+- `end` (optional): New time and date at which the vote will end. Given as ISO 8601 formatted time string. Must be after the given start time and in the future.
 
 ## end
 ### Description
