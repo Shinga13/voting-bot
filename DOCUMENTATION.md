@@ -107,3 +107,8 @@ Enables / disables display of anonymized vote rationales when vote ends.
 Manually unregisters a voter. Denies this user to vote. Already cast roles will become invalid when the vote ends.
 ### Parameters
 - `voter` (required): User to unregister.
+
+# vote-archive
+## view
+### Description
+Displays archived vote. Also displays vote rationales of that vote if the `show-rationales` setting is enabled.

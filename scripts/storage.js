@@ -41,8 +41,28 @@ function store_archived_vote(vote_object, guild_id) {
     }
 }
 
+function get_archived_votes(guild_id) {
+    let votes_list = [];
+    const archive_folder = path.join(archive_path, guild_id.toString())
+    fs.readdirSync(
+        archive_folder, { withFileTypes: true }
+    ).filter(
+        dir_or_file => !dir_or_file.isDirectory()
+    ).forEach(
+        file => votes_list.push(file.name)
+    );
+    return votes_list;
+}
+
+function get_archived_vote_data (guild_id, file_name) {
+    const archive_file = path.join(archive_path, guild_id.toString(), file_name)
+    return JSON.parse(fs.readFileSync(archive_file, { encoding: 'utf-8' }));
+}
+
 module.exports = {
     store_current_votes: store_current_votes,
     store_settings: store_settings,
     store_archived_vote: store_archived_vote,
+    get_archived_votes: get_archived_votes,
+    get_archived_vote_data: get_archived_vote_data
 }

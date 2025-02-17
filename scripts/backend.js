@@ -555,6 +555,7 @@ module.exports = {
     ensure_guild_config: ensure_guild_config,
     create_guild_setting: create_guild_setting,
     create_vote_embed: create_vote_embed,
+    create_archived_embed: create_archived_embed,
     get_confirmation: get_confirmation,
     get_identification: get_identification,
     get_entry: get_entry,
@@ -568,5 +569,6 @@ module.exports = {
     schedule_vote_actions: schedule_vote_actions,
     purge_guild_scheduler: purge_guild_scheduler,
     schedule_guild_votes: schedule_guild_votes,
-    clear_scheduled_actions: clear_scheduled_actions
+    clear_scheduled_actions: clear_scheduled_actions,
+    join_rationales: join_rationales
 }

@@ -2,6 +2,7 @@ const { Client, Collection, Events, GatewayIntentBits, MessageFlags } = require(
 const vote_create_command = require('./commands/vote-create.js');
 const vote_manage_command = require('./commands/vote-manage.js');
 const vote_settings_command = require('./commands/vote-settings.js');
+const vote_archive_command = require('./commands/vote-archive.js');
 const { init_backend } = require('./scripts/setup.js');
 const { 
     create_guild_setting,
@@ -20,6 +21,7 @@ client.commands = new Collection();
 client.commands.set(vote_create_command.data.name, vote_create_command);
 client.commands.set(vote_manage_command.data.name, vote_manage_command);
 client.commands.set(vote_settings_command.data.name, vote_settings_command);
+client.commands.set(vote_archive_command.data.name, vote_archive_command);
 client.active_votes = active_votes;
 client.vote_settings = settings;
 client.schedule = schedule;
