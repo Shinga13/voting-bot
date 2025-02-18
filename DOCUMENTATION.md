@@ -120,6 +120,26 @@ Manually unregisters a voter. Denies this user to vote. Already cast roles will 
 ### Parameters
 - `voter` (required): User to unregister.
 
+## set-registration-channel
+### Description
+Set channel used for registration process. Only one channel may be set for this purpose.
+### Parameters
+- `channel` (required): the channel to use
+
+## add-registrar
+### Description
+Make user a registrar for a specific identification. Each registrar may only register uses for a single identification.
+### Parameters
+- `registrar` (required): user to register as registrar
+- `identification` (required): identification the registrar may identify users for
+
+## remove-registrar
+### Description
+Remove a users ability to register voters.
+### Parameters
+- `registrar` (required): user to remove
+
+
 # vote-archive
 ## view
 ### Description

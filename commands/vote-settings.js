@@ -1,4 +1,9 @@
-const { MessageFlags, SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
+const { 
+    ChannelType,
+    MessageFlags,
+    PermissionFlagsBits,
+    SlashCommandBuilder
+} = require('discord.js');
 const { get_confirmation } = require('../scripts/backend.js');
 const { store_settings } = require('../scripts/storage.js');
 
@@ -125,6 +130,39 @@ module.exports = {
         .addSubcommand(subcommand =>
             subcommand.setName('help')
             .setDescription('show command documentation')
+        )
+        .addSubcommand(subcommand =>
+            subcommand.setName('set-registration-channel')
+            .setDescription('Sets the channel to use for registering voters.')
+            .addChannelOption(option =>
+                option.setName('channel')
+                .setDescription('channel to use for registration')
+                .setRequired(true)
+                .addChannelTypes(ChannelType.GuildText)
+            )
+        )
+        .addSubcommand(subcommand =>
+            subcommand.setName('add-registrar')
+            .setDescription('Adds person to verify registration requests.')
+            .addUserOption(option =>
+                option.setName('registrar')
+                .setDescription('registrar to add')
+                .setRequired(true)
+            )
+            .addStringOption(option =>
+                option.setName('identification')
+                .setDescription('identification the registrar registers for')
+                .setRequired(true)
+            )
+        )
+        .addSubcommand(subcommand =>
+            subcommand.setName('remove-registrar')
+            .setDescription('Removes Registrar.')
+            .addUserOption(option =>
+                option.setName('registrar')
+                .setDescription('registrar to remove')
+                .setRequired(true)
+            )
         ),
     async execute(interaction) {
         await interaction.deferReply({ flags: MessageFlags.Ephemeral });
@@ -365,6 +403,49 @@ module.exports = {
                 settings.absolute_reminders = [];
                 settings.relative_reminders = [];
                 store_settings(interaction.client.vote_settings);
+            }
+        }
+
+        // vote-settings set-registration-channel
+        else if (command === 'set-registration-channel') {
+            const channel = interaction.options.getChannel('channel', true);
+            if (await get_confirmation(
+                `Set channel \`#${channel.name}\` as registration channel.`, interaction, true
+            )) {
+                settings.registration_channel = channel.id;
+                store_settings(interaction.client.vote_settings);
+            }
+        }
+
+        // vote-settings add-registrar
+        else if (command === 'add-registrar') {
+            const new_registrar = interaction.options.getUser('registrar', true);
+            const new_id = interaction.options.getString('identification', true);
+            if (await get_confirmation(
+                `Add <@${new_registrar.id}> as registrar for \`${new_id}\`.`, interaction, true)
+            ) {
+                settings.registrars[new_registrar.id] = new_id;
+                store_settings(interaction.client.vote_settings);
+            }
+        }
+
+        // vote-settings remove-registrar
+        else if (command === 'remove-registrar') {
+            const registrar = interaction.options.getUser('registrar', true);
+            const identify = settings.registrars[registrar.id];
+            if (Object.hasOwn(settings.registrars, registrar.id)) {
+                if (await get_confirmation(
+                    `Remove <@${registrar.id}> as registrar for \`${identify}\`.`,
+                    interaction, true)
+                ) {
+                    delete settings.registrars[registrar.id];
+                    store_settings(interaction.client.vote_settings);
+                }
+            }
+            else {
+                interaction.editReply({ 
+                    content: `Can't remove registrar: <@${registrar.id}> is no registrar.`
+                });
             }
         }
     }

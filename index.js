@@ -1,4 +1,4 @@
-const { Client, Collection, Events, GatewayIntentBits, MessageFlags } = require('discord.js');
+const { Client, Collection, Events, GatewayIntentBits, MessageFlags, Partials } = require('discord.js');
 const vote_create_command = require('./commands/vote-create.js');
 const vote_manage_command = require('./commands/vote-manage.js');
 const vote_settings_command = require('./commands/vote-settings.js');
@@ -11,11 +11,19 @@ const {
     schedule_guild_votes
 } = require('./scripts/backend.js');
 const { handle_embed_click } = require('./scripts/voting.js');
+const { handle_message } = require('./scripts/registration.js');
 const bot_token = process.env.BOT_TOKEN;
 
 const [active_votes, settings, schedule] = init_backend();
 
-const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers] });
+const client = new Client({
+    intents: [
+        GatewayIntentBits.Guilds,
+        GatewayIntentBits.GuildMembers,
+        GatewayIntentBits.GuildMessages,
+        GatewayIntentBits.GuildMessageReactions
+    ]
+});
 
 client.commands = new Collection();
 client.commands.set(vote_create_command.data.name, vote_create_command);
@@ -64,6 +72,10 @@ client.on(Events.InteractionCreate, async interaction => {
         const vote = interaction.customId.slice(equal + 1);
         handle_embed_click(vote, button_type, interaction);
     }
+});
+
+client.on(Events.MessageCreate, async message => {
+    handle_message(message, client);
 });
 
 client.on(Events.GuildCreate, async guild => {

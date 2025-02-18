@@ -10,6 +10,7 @@ Functionality:
 - results are dispayed once voting ends, with the option to show anonymized rationales
 - only users with specific roles can vote; users can be registered manually if using roles is not desired
 - reminders are sent when the vote opens and at specified times during voting
+- user can be registered interactively
 
 ## Getting Started
 *Slash commands used to manage the bot are available to users with the "Manage Events" permission.*
@@ -18,11 +19,20 @@ Firstly, set up voting permissions. You can do this either by setting roles or m
 
 Secondly, make sure that the bot is allowed to ping all roles to enable it to actually notify the voters when the voting starts. You can also choose to edit a few settings:
 - Showing rationales: Use the [/vote-settings show-rationales](./DOCUMENTATION.md#show-rationales) command to enable / disable the feature. When enabled the rationales of all votes will be displayed publicily, grouped by decision and in anonymous form in the channel the voting took place as soon as the vote closes.
-- Setting reminders: Use either of the set-...-reminders commands to set reminders. These reminders will ping voters to remind them to cast their vote.
+- Setting reminders: Use either of the set-...-reminders commands to set reminders. These reminders will ping or DM voters to remind them to cast their vote.
 
 Now you are ready to start your first vote. Use the [/vote-create](./DOCUMENTATION.md#vote-create) command to create a vote. The embed showing the status and voting buttons will be shown in the channel that the command was sent to.
 
 To see all commands, visit the [Documentation](./DOCUMENTATION.md).
+
+## Registration using Registrars
+Instead of manually registering users with the [/vote-settings register-voter](./DOCUMENTATION.md#register-voter) command, users can be registered by "registrars" interactively.
+
+To set up this method, first create a channel that will be used for registration. Set this channel as registration channel using the [/vote-settings set-registration-channel](./DOCUMENTATION.md#set-registration-channel) command. Now add registrars using the [/vote-settings add-registrar](./DOCUMENTATION.md#add-registrar) command. Each registrar will be given the ability to register users for one identification (this could be an organization name, etc.).
+
+For a user to be registered, they have to send any message in the registration channel. When a registrar answers to this message (with an arbitrary message), the bot will prompt the registrar to confirm the registration. If they confirm, the user will be registered, all messages regarding this registration will be deleted and the bot will note the successful registration in the channel. If they cancel the registration, their message and the bots confirmation message will be deleted without further action taken.
+
+*Note:* Although the confirmation message is visible to anyone, only the respective registrar can interact with it.
 
 ## Development & Deployment
 ### Environment variables

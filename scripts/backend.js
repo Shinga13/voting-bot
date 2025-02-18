@@ -617,5 +617,5 @@ module.exports = {
     purge_guild_scheduler: purge_guild_scheduler,
     schedule_guild_votes: schedule_guild_votes,
     clear_scheduled_actions: clear_scheduled_actions,
-    join_rationales: join_rationales
+    join_rationales: join_rationales,
 }
