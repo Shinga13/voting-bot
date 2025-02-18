@@ -7,7 +7,6 @@ module.exports = {
         .setName('vote-settings')
         .setDescription('manage server-wide settings for votes')
         .setDefaultMemberPermissions(PermissionFlagsBits.ManageEvents)
-        .setDMPermission(false)
         .addSubcommand(subcommand =>
             subcommand.setName('set-primary-role')
             .setDescription('all members with the specified role are able to vote')
@@ -71,6 +70,28 @@ module.exports = {
             .addBooleanOption(option =>
                 option.setName('enabled')
                 .setDescription('enable rationale display')
+                .setRequired(true)
+            )
+        )
+        .addSubcommand(subcommand =>
+            subcommand.setName('individual-reminders')
+            .setDescription(
+                "remind voters that haven't voted yet via DM"
+            )
+            .addBooleanOption(option =>
+                option.setName('enabled')
+                .setDescription('enable individual reminders')
+                .setRequired(true)
+            )
+        )
+        .addSubcommand(subcommand =>
+            subcommand.setName('channel-reminders')
+            .setDescription(
+                "remind all voters via mention in voing channel"
+            )
+            .addBooleanOption(option =>
+                option.setName('enabled')
+                .setDescription('enable channel reminders')
                 .setRequired(true)
             )
         )
@@ -243,6 +264,38 @@ module.exports = {
             }
             if (await get_confirmation(message, interaction, true)) {
                 settings.display_rationales = param_rationales;
+                store_settings(interaction.client.vote_settings);
+            }
+        }
+
+        // vote-settings individual-reminders
+        else if (command === 'individual-reminders') {
+            const param_dm_reminders = interaction.options.getBoolean('enabled', true);
+            let message;
+            if (param_dm_reminders) {
+                message = 'Voters that did not vote yet will be reminded via DM.';
+            }
+            else {
+                message = 'Voters that did not vote yet will not be reminded via DM.';
+            }
+            if (await get_confirmation(message, interaction, true)) {
+                settings.dm_reminders = param_dm_reminders;
+                store_settings(interaction.client.vote_settings);
+            }
+        }
+
+        // vote-settings channel-reminders
+        else if (command === 'channel-reminders') {
+            const param_ping_reminders = interaction.options.getBoolean('enabled', true);
+            let message;
+            if (param_ping_reminders) {
+                message = 'All voters will be reminded via mention in voting channel.';
+            }
+            else {
+                message = 'Voters will not be reminded via mention in voting channel.';
+            }
+            if (await get_confirmation(message, interaction, true)) {
+                settings.ping_reminders = param_ping_reminders;
                 store_settings(interaction.client.vote_settings);
             }
         }

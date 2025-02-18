@@ -102,6 +102,18 @@ Enables / disables display of anonymized vote rationales when vote ends.
 ### Parameters
 - `enabled` (required): True / False. True enables the feature, False diables it.
 
+## channel-reminders
+### Description
+Enables / disables reminders in the voting channel, pinging the relevant members and roles.
+### Parameters
+- `enabled` (required): True / False. True enables the feature, False diables it.
+
+## individual-reminders
+### Description
+Enables / disables reminders via DM to the relevant members.
+### Parameters
+- `enabled` (required): True / False. True enables the feature, False diables it.
+
 ## un-register-voter
 ### Description
 Manually unregisters a voter. Denies this user to vote. Already cast roles will become invalid when the vote ends.

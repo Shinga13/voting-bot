@@ -9,6 +9,7 @@ const {
     TextInputStyle
 } = require('discord.js');
 const { store_settings, store_current_votes, store_archived_vote } = require('./storage.js');
+const { create_guild_settings } = require('./setup.js');
 const schedule = require('node-schedule');
 
 function create_guild_config(client, guild_id) {
@@ -22,14 +23,7 @@ function create_guild_vote_storage(vote_object, guild_id) {
 }
 
 function create_guild_setting(settings_object, guild_id) {
-    settings_object[guild_id] = {
-        absolute_reminders: [],
-        relative_reminders: [],
-        primary_role: null,
-        secondary_roles: [],
-        registrations: {},
-        display_rationales: true,
-    };
+    settings_object[guild_id] = create_guild_settings();
     store_settings(settings_object);
 }
 
@@ -284,15 +278,7 @@ function schedule_vote_actions(vote, client, guild_id) {
                 );
                 reminder_job = schedule.scheduleJob(
                     new Date(reminder_timestamp * 1000),
-                    () => ping_users(
-                        user_list,
-                        role_list,
-                        reminder_message,
-                        client,
-                        guild_id,
-                        vote.channel_id,
-                        vote.message_id
-                    )
+                    () => notify_voters(vote, client, guild_id, reminder_message)
                 );
                 schedule_array.push(reminder_job);
             }
@@ -309,15 +295,7 @@ function schedule_vote_actions(vote, client, guild_id) {
                 );
                 reminder_job = schedule.scheduleJob(
                     new Date(reminder_timestamp * 1000),
-                    () => ping_users(
-                        user_list,
-                        role_list,
-                        reminder_message,
-                        client,
-                        guild_id,
-                        vote.channel_id,
-                        vote.message_id
-                    )
+                    () => notify_voters(vote, client, guild_id, reminder_message)
                 );
                 schedule_array.push(reminder_job);
             }
@@ -445,9 +423,9 @@ function get_valid_identifications(user_id, guild_id, client, member) {
     let identifications = [];
     const current_settings = client.vote_settings[guild_id];
     if (user_id in current_settings.registrations) {
-        identifications = current_settings.registrations[user_id];
+        identifications = [...current_settings.registrations[user_id]];
     }
-    else if (member.roles.cache.has(current_settings.primary_role)) {
+    if (member.roles.cache.has(current_settings.primary_role)) {
         member.roles.cache.forEach((role, role_id, cache) => {
             if (current_settings.secondary_roles.includes(role_id)) {
                 identifications.push(role.name);
@@ -507,21 +485,55 @@ function create_archived_embed(archived_vote) {
 
 function open_vote(vote, client, guild_id) {
     update_vote_embed(vote, client, guild_id);
-    const user_list = Object.keys(client.vote_settings[guild_id].registrations);
-    const role_list = [client.vote_settings[guild_id].primary_role];
     const open_message = (
         `VOTE: **${vote.title}**\nVoting has opened! Please cast your vote within the specified `
         + 'timeframe.'
     );
-    ping_users(
-        user_list,
-        role_list,
-        open_message,
-        client,
-        guild_id,
-        vote.channel_id,
-        vote.message_id
-    );
+    notify_voters(vote, client, guild_id, open_message);
+}
+
+function notify_voters(vote, client, guild_id, message) {
+    const voters_not_voted = [];
+    const voters_list = [];
+    for (let user_id in client.vote_settings[guild_id].registrations) {
+        voters_list.push(user_id);
+        for (let identification of client.vote_settings[guild_id].registrations[user_id]) {
+            if (Object.hasOwn(vote.voters, user_id)) {
+                if (!Object.hasOwn(vote.voters[user_id], identification)) {
+                    voters_not_voted.push(user_id);
+                    break;
+                };
+            }
+            else {
+                voters_not_voted.push(user_id);
+                break;
+            }
+        }
+    }
+    const role_list = [client.vote_settings[guild_id].primary_role];
+    if (client.vote_settings[guild_id].ping_reminders) {
+        ping_users(
+            voters_list,
+            role_list,
+            message,
+            client,
+            guild_id,
+            vote.channel_id,
+            vote.message_id
+        );
+    }
+    if (client.vote_settings[guild_id].dm_reminders) {
+        dm_users(
+            voters_not_voted,
+            role_list,
+            message,
+            client,
+            guild_id,
+            vote.channel_id,
+            vote.message_id,
+            vote.voters
+        );
+    }
 }
 
 function ping_users(user_list, role_list, text, client, guild_id, channel_id, message_id) {
@@ -547,6 +559,41 @@ function ping_users(user_list, role_list, text, client, guild_id, channel_id, me
             reply: { messageReference: message_id }
         })
     );
+}
+
+async function dm_users(user_list, role_list, text, client, guild_id, channel_id, message_id, voters) {
+    let message = text
+            + `\nVote at: https://discord.com/channels/${guild_id}/${channel_id}/${message_id}`;
+    const secondary_roles = client.vote_settings[guild_id].secondary_roles;
+    const guild = await client.guilds.fetch(guild_id);
+    await guild.members.fetch();
+    const identify_roles = {};
+    for (let role_id of secondary_roles) {
+        identify_roles[role_id] = (await guild.roles.fetch(role_id)).name;
+    }
+    let notify_list = new Set([]);
+    let role;
+    if (role_list.length > 0) {
+        for (let role_id of role_list) {
+            role = await guild.roles.fetch(role_id);
+            role.members.forEach((member, member_id) => {
+                if (Object.hasOwn(voters, member_id)) {
+                    for (let possible_role of secondary_roles) {
+                        if (member.roles.cache.has(possible_role) && !Object.hasOwn(voters[member_id], identify_roles[possible_role])) {
+                            notify_list.add(member_id);
+                        }
+                    }
+                }
+                else {
+                    notify_list.add(member_id);
+                }
+            });
+        }
+    }
+    if (user_list.length > 0) {
+        user_list.forEach(user_id => notify_list.add(user_id));
+    }
+    notify_list.forEach(user_id => guild.members.cache.get(user_id).send({ content: message }));
 }
 
 module.exports = {

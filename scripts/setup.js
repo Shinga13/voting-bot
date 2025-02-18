@@ -5,6 +5,19 @@ const archive_path = path.join(data_path, 'voting_archive');
 const vote_path = path.join(data_path, 'active_votes.json');
 const settings_path = path.join(data_path, 'settings.json');
 
+function create_guild_settings() {
+    return {
+        absolute_reminders: [],
+        relative_reminders: [],
+        primary_role: null,
+        secondary_roles: [],
+        registrations: {},
+        display_rationales: true,
+        dm_reminders: false,
+        ping_reminders: true,
+    };
+}
+
 function init_backend() {
     if (!fs.existsSync(data_path) || !fs.lstatSync(data_path).isDirectory()) {
         fs.mkdirSync(data_path);
@@ -26,12 +39,14 @@ function init_backend() {
     if (!fs.existsSync(settings_path)) {
         fs.writeFileSync(settings_path, '{}', {encoding: 'utf-8', flag: 'w'});
     }
-    let settings;
+    let settings = {};
     try {
-        settings = JSON.parse(fs.readFileSync(settings_path, {encoding: 'utf-8', flag: 'r'}));
+        saved_settings = JSON.parse(fs.readFileSync(settings_path, {encoding: 'utf-8', flag: 'r'}));
+        for (let guild_id in saved_settings) {
+            settings[guild_id] = {...create_guild_settings(), ...saved_settings[guild_id]};
+        }
     }
     catch {
-        settings = {};
         fs.writeFileSync(settings_path, '{}', {encoding: 'utf-8', flag: 'w'});
     }
     let schedule = {};
@@ -51,5 +66,6 @@ module.exports = {
     archive_path: archive_path,
     vote_path: vote_path,
     settings_path: settings_path,
-    init_backend: init_backend
+    init_backend: init_backend,
+    create_guild_settings: create_guild_settings
 }

@@ -15,7 +15,7 @@ const bot_token = process.env.BOT_TOKEN;
 
 const [active_votes, settings, schedule] = init_backend();
 
-const client = new Client({ intents: [GatewayIntentBits.Guilds] });
+const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers] });
 
 client.commands = new Collection();
 client.commands.set(vote_create_command.data.name, vote_create_command);
