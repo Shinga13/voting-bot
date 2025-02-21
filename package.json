@@ -1,6 +1,6 @@
 {
   "name": "voting-bot",
-  "version": "2.3.0",
+  "version": "2.4.0",
   "description": "voting bot for discord",
   "main": "index.js",
   "scripts": {

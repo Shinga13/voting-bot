@@ -45,6 +45,10 @@ module.exports = {
             )
         )
         .addSubcommand(subcommand =>
+            subcommand.setName('show-voting-roles')
+            .setDescription('Displays roles used to identify voters.')
+        )
+        .addSubcommand(subcommand =>
             subcommand.setName('register-voter')
             .setDescription('manually register voter, enabling them to vote')
             .addUserOption(option =>
@@ -66,6 +70,10 @@ module.exports = {
                 .setDescription('voter to remove')
                 .setRequired(true)
             )
+        )
+        .addSubcommand(subcommand =>
+            subcommand.setName('show-registered-voters')
+            .setDescription('Displays all registered voters by identification.')
         )
         .addSubcommand(subcommand =>
             subcommand.setName('show-rationales')
@@ -446,6 +454,56 @@ module.exports = {
                 interaction.editReply({ 
                     content: `Can't remove registrar: <@${registrar.id}> is no registrar.`
                 });
+            }
+        }
+
+        //vote-settings show-voting-roles
+        else if (command === 'show-voting-roles') {
+            interaction.editReply({
+                content: `__Primary Role:__ <@&${settings.primary_role}>\n__Secondary Roles:__\n`
+                        + settings.secondary_roles.map(el => `- <@&${el}>`).join('\n')
+            });
+        }
+
+        //vote-settings show-registered-voters
+        else if (command === 'show-registered-voters') {
+            const idents = {};
+            for (let voter_id in settings.registrations) {
+                for (let identification of settings.registrations[voter_id]) {
+                    if (identification in idents) {
+                        idents[identification].push(voter_id);
+                    }
+                    else {
+                        idents[identification] = [voter_id];
+                    }
+                }
+            }
+            let out = '';
+            for (let identification in idents) {
+                out = out
+                        + `\n__${identification}:__\n`
+                        + idents[identification].map(id => `- <@${id}>`).join('\n');
+            }
+            if (out.length < 1900) {
+                interaction.editReply({ content: out });
+            }
+            else {
+                if (await get_confirmation(
+                        'List of voters too long. Sending as DM.', interaction, edit=true)
+                ){
+                    let message = '';
+                    let remainder = out;
+                    let first_br;
+                    while (remainder.length > 1900) {
+                        message = remainder.slice(0, 1900);
+                        remainder = remainder.slice(1900);
+                        first_br = remainder.indexOf('\n');
+                        message = message + remainder.slice(0, first_br)
+                        remainder = remainder.slice(first_br);
+                        await interaction.user.send({ content: message });
+                    }
+                    interaction.user.send({ content: remainder });
+                }
             }
         }
     }

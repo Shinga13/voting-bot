@@ -139,6 +139,14 @@ Remove a users ability to register voters.
 ### Parameters
 - `registrar` (required): user to remove
 
+## show-voting-roles
+### Description
+Shows roles used to authorize voters.
+
+## show-registered-voters
+### Description
+Shows all registered voters sorted by identification. If the list is too long, sends it as multiple DMs. 
+
 
 # vote-archive
 ## view
