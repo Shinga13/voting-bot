@@ -16,7 +16,8 @@ function create_guild_settings() {
         dm_reminders: false,
         ping_reminders: true,
         registration_channel: null,
-        registrars: {}
+        registrars: {},
+        weigh_votes: false
     };
 }
 

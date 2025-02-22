@@ -347,6 +347,7 @@ async function close_vote(vote, client, guild_id) {
     let valid_identifications;
     let voter_member;
     let current_ballot;
+    let votes_by_ident = {};
     const guild = await client.guilds.fetch(guild_id);
     for (let voter_id in vote.voters) {
         if (Object.keys(vote.voters[voter_id]).length < 1) {
@@ -360,17 +361,24 @@ async function close_vote(vote, client, guild_id) {
         }
         valid_identifications = get_valid_identifications(voter_id, guild_id, client, voter_member);
         for (let identification in vote.voters[voter_id]) {
+            if (!(identification in votes_by_ident)) {
+                votes_by_ident[identification] = { Yes: 0, No: 0, Abstain: 0, _sum: 0, _weight: null };
+            }
             if (valid_identifications.includes(identification)) {
                 current_ballot = vote.ballots[vote.voters[voter_id][identification]];
                 if (current_ballot.decision === 'Yes') {
                     yes_rationales.push(current_ballot.rationale);
+                    votes_by_ident[identification].Yes++;
                 }
                 else if (current_ballot.decision === 'No') {
                     no_rationales.push(current_ballot.rationale);
+                    votes_by_ident[identification].No++;
                 }
                 else if (current_ballot.decision === 'Abstain') {
                     abstain_rationales.push(current_ballot.rationale);
+                    votes_by_ident[identification].Abstain++;
                 }
+                votes_by_ident[identification]._sum++;
             }
             else {
                 invalid_votes++;
@@ -390,6 +398,23 @@ async function close_vote(vote, client, guild_id) {
         no: no_rationales,
         abstain: abstain_rationales,
         invalid: invalid_votes,
+    }
+    if (client.vote_settings[guild_id].weigh_votes) {
+        const max_votes = Math.max(...Object.keys(votes_by_ident).map(id => votes_by_ident[id]._sum));
+        Object.keys(votes_by_ident).forEach(id => votes_by_ident[id]._weight = max_votes / votes_by_ident[id]._sum);
+        let weighed_yes = 0;
+        let weighed_no = 0;
+        let weighed_abstain = 0;
+        let current_weight = 0;
+        for (let identification in votes_by_ident) {
+            current_weight = votes_by_ident[identification]._weight;
+            weighed_yes = weighed_yes + votes_by_ident[identification].Yes * current_weight;
+            weighed_no = weighed_no + votes_by_ident[identification].No * current_weight;
+            weighed_abstain = weighed_abstain + votes_by_ident[identification].Abstain * current_weight;
+        }
+        archived_vote.weighed_yes = weighed_yes;
+        archived_vote.weighed_no = weighed_no;
+        archived_vote.weighed_abstain = weighed_abstain;
     }
     const new_embed = create_archived_embed(archived_vote);
     const channel = await guild.channels.fetch(vote.channel_id);
@@ -436,40 +461,60 @@ function get_valid_identifications(user_id, guild_id, client, member) {
 }
 
 function create_archived_embed(archived_vote) {
+    let fields = [
+        {
+            name: 'Vote started on:',
+            value: `<t:${archived_vote.start_timestamp}:f>`,
+            inline: true
+        },
+        {
+            name: 'Vote ended on:',
+            value: `<t:${archived_vote.end_timestamp}:f>`,
+            inline: true
+        },
+        {
+            name: 'Vote status:',
+            value: 'ENDED',
+            inline: true },
+        {
+            name: 'Number of "YES" votes:',
+            value: `**${archived_vote.yes.length}**`,
+            inline: true
+        },
+        {
+            name: 'Number of "NO" votes:',
+            value: `**${archived_vote.no.length}**`,
+            inline: true
+        },
+        {
+            name: 'Number of "ABSTAIN" votes:',
+            value: `**${archived_vote.abstain.length}**`,
+            inline: true
+        }
+    ];
+    if ('weighed_yes' in archived_vote && 'weighed_no' in archived_vote && 'weighed_abstain' in archived_vote) {
+        fields.push({
+            name: 'Weighed "YES" votes:',
+            value: `**${Math.round(archived_vote.weighed_yes)}**`,
+            inline: true
+        });
+        fields.push({
+            name: 'Weighed "NO" votes:',
+            value: `**${Math.round(archived_vote.weighed_no)}**`,
+            inline: true
+        });
+        fields.push({
+            name: 'Weighed "ABSTAIN" votes:',
+            value: `**${Math.round(archived_vote.weighed_abstain)}**`,
+            inline: true
+        });
+    }
     return new EmbedBuilder()
         .setColor(0x00CCBB)
         .setTitle(archived_vote.title)
         .setDescription(archived_vote.subject)
         .addFields(
-            {
-                name: 'Vote started on:',
-                value: `<t:${archived_vote.start_timestamp}:f>`,
-                inline: true
-            },
-            {
-                name: 'Vote ended on:',
-                value: `<t:${archived_vote.end_timestamp}:f>`,
-                inline: true
-            },
-            {
-                name: 'Vote status:',
-                value: 'ENDED',
-                inline: true },
-            {
-                name: 'Number of "YES" votes:',
-                value: `**${archived_vote.yes.length}**`,
-                inline: true
-            },
-            {
-                name: 'Number of "NO" votes:',
-                value: `**${archived_vote.no.length}**`,
-                inline: true
-            },
-            {
-                name: 'Number of "ABSTAIN" votes:',
-                value: `**${archived_vote.abstain.length}**`,
-                inline: true
-            },
+            ... fields,
             {
                 name: 'Invalid votes:',
                 value: `**${archived_vote.invalid}**`,

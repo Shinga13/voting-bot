@@ -171,6 +171,15 @@ module.exports = {
                 .setDescription('registrar to remove')
                 .setRequired(true)
             )
+        )
+        .addSubcommand(subcommand =>
+            subcommand.setName('weigh-votes')
+            .setDescription('Weigh votes based on identification.')
+            .addBooleanOption(option =>
+                option.setName('enabled')
+                .setDescription('enable the feature')
+                .setRequired(true)
+            )
         ),
     async execute(interaction) {
         await interaction.deferReply({ flags: MessageFlags.Ephemeral });
@@ -504,6 +513,22 @@ module.exports = {
                     }
                     interaction.user.send({ content: remainder });
                 }
+            }
+        }
+
+        //vote-settings weigh-votes
+        else if (command === 'weigh-votes'){
+            const param_weigh = interaction.options.getBoolean('enabled', true);
+            let message;
+            if (param_weigh) {
+                message = 'Votes will be weighed based on the number of votes cast per identification to ensure parity among identifications.';
+            }
+            else {
+                message = 'Votes will not be weighed.';
+            }
+            if (await get_confirmation(message, interaction, true)) {
+                settings.weigh_votes = param_weigh;
+                store_settings(interaction.client.vote_settings);
             }
         }
     }

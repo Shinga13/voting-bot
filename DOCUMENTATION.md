@@ -112,7 +112,7 @@ Enables / disables reminders in the voting channel, pinging the relevant members
 ### Description
 Enables / disables reminders via DM to the relevant members.
 ### Parameters
-- `enabled` (required): True / False. True enables the feature, False diables it.
+- `enabled` (required): True / False. True enables the feature, False disables it.
 
 ## un-register-voter
 ### Description
@@ -145,7 +145,13 @@ Shows roles used to authorize voters.
 
 ## show-registered-voters
 ### Description
-Shows all registered voters sorted by identification. If the list is too long, sends it as multiple DMs. 
+Shows all registered voters sorted by identification. If the list is too long, sends it as multiple DMs.
+
+## weigh-votes
+### Description
+Weighs votes based on identification, so that each identification has the same voting power independent from the number of votes cast per identification.
+### Parameters
+- `enabled` (required): True / Fals. True enables the feature, False disables it.
 
 
 # vote-archive
