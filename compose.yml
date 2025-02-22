@@ -3,6 +3,7 @@ version: "3"
 services:
   voting-bot:
     image: voting-bot:${BOT_VERSION}
+    restart: always
     build:
       context: .
       dockerfile: Dockerfile
