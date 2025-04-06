@@ -174,6 +174,9 @@ async function get_identification(identification_list, interaction) {
 }
 
 async function get_entry(title, message, modal_interaction) {
+    if (title.length > 45) {
+        title = 'Please enter your rationale.';
+    }
     const modal = new ModalBuilder()
         .setTitle(title)
         .setCustomId('get_entry_modal')
