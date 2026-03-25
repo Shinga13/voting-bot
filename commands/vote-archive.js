@@ -96,14 +96,14 @@ module.exports = {
                     const rationale_lines = rationale_text.split('\n');
                     let current_text = '';
                     for (let current_line of rationale_lines) {
-                        if (current_line.length + current_text.length >= 2000) {
+                        if (current_line.length + current_text.length + 1 >= 2000) {
                             interaction.channel.send({
                                 content: current_text,
                                 reply: { messageReference: vote_message.id }
                             });
                             current_text = '';
                         }
-                        current_text = current_text + current_line;
+                        current_text = current_text + current_line + '\n';
                     }
                     if (current_text.length > 0) {
                         interaction.channel.send({
