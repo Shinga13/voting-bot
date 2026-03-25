@@ -425,13 +425,36 @@ async function close_vote(vote, client, guild_id) {
         message => message.edit({ embeds: [new_embed], components: [] })
     );
     if (client.vote_settings[guild_id].display_rationales) {
-        channel.send({
-            content: `VOTE: **${vote.title}**\n__Vote Rationales:__\n\n`
-                    + `**Yes:**\n${join_rationales(yes_rationales)}\n`
-                    + `**No:**\n${join_rationales(no_rationales)}\n`
-                    + `**Abstain:**\n${join_rationales(abstain_rationales)}`,
-            reply: { messageReference: vote.message_id }
-        });
+        const rationale_text = `VOTE: **${vote.title}**\n__Vote Rationales:__\n\n`
+            + `**Yes:**\n${join_rationales(yes_rationales)}\n`
+            + `**No:**\n${join_rationales(no_rationales)}\n`
+            + `**Abstain:**\n${join_rationales(abstain_rationales)}`
+        if (rationale_text.length < 2000) {
+            channel.send({
+                content: rationale_text,
+                reply: { messageReference: vote.message_id }
+            });
+        }
+        else {
+            const rationale_lines = rationale_text.split('\n');
+            let current_text = '';
+            for (let current_line of rationale_lines) {
+                if (current_line.length + current_text.length >= 2000) {
+                    channel.send({
+                        content: current_text,
+                        reply: { messageReference: vote.message_id }
+                    });
+                    current_text = '';
+                }
+                current_text = current_text + current_line;
+            }
+            if (current_text.length > 0) {
+                channel.send({
+                    content: current_text,
+                    reply: { messageReference: vote.message_id }
+                });
+            }
+        }
     }
     store_archived_vote(archived_vote, guild_id);
     delete client.active_votes[guild_id][vote.title];
