@@ -50,8 +50,6 @@ module.exports = {
         const param_title = interaction.options.getString('title', true);
         const param_subject = interaction.options.getString('subject', true);
         let param_start = Date.parse(interaction.options.getString('start', true));
-        console.log(interaction.options.getString('start', true));
-        console.log(param_start);
         if (!isNaN(param_start)) {
             param_start = param_start / 1000
         }

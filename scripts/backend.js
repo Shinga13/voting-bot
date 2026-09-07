@@ -436,29 +436,53 @@ async function close_vote(vote, client, guild_id) {
 function join_rationales(rationale_list) {
     let out = '';
     for (let rationale of rationale_list) {
-        out = out + `\`\`\`${rationale}\`\`\`\n`;
+        out = out + `\`\`\`${rationale}\`\`\``;
     }
     return out;
 }
 
 function send_long_message(message, vote_message_id, channel) {
     let text = '> rationale start\n';
-    let do_reply = true;
     const parts = message.split(' ');
     for (let part of parts) {
         if (text.length + part.length + 1 >= 2000) {
             channel.send({
-                content: text,
-                reply: do_reply ? { messageReference: vote_message_id } : undefined
+                content: text
             });
             text = '';
-            do_reply = false;
         }
         text = text + ' ' + part;
     }
-    if (text.length > 0) {
+    if (text.length + 17 >= 2000) {
+        channel.send({content: text});
+        channel.send({content: '\n> rationale end\n'});
+    }
+    else if (text.length > 0) {
+        channel.send({content: text + '\n> rationale end\n'});
+    }
+}
+
+function send_rationale_segment(rationale_list, intro_text, vote_message_id, channel) {
+    let do_reply = true;
+    let rationale_text = intro_text;
+    for (let current_rationale of rationale_list) {
+        if (rationale_text.length + current_rationale.length + 6 >= 2000) {
+            channel.send({
+                content: rationale_text,
+                reply: do_reply ? { messageReference: vote_message_id } : undefined
+            });
+            do_reply = false;
+            rationale_text = '';
+            if (current_rationale.length + 6 >= 2000) {
+                send_long_message(current_rationale, vote_message_id, channel);
+                continue;
+            }
+        }
+        rationale_text = rationale_text + '```' + current_rationale + '```';
+    }
+    if (rationale_text.length > 0) {
         channel.send({
-            content: text + '\n> rationale end\n',
+            content: rationale_text,
             reply: do_reply ? { messageReference: vote_message_id } : undefined
         });
     }
@@ -476,61 +500,12 @@ function create_rationale_messages(vote, vote_message_id, channel) {
         });
     }
     else {
-        const rationale_lines = rationale_text.split('\n');
-        let current_text = '';
-        for (let current_line of rationale_lines) {
-            if (current_line.length + current_text.length + 1 >= 2000) {
-                if ((current_text.split('```').length - 1) % 2 === 0) {
-                    channel.send({
-                        content: current_text,
-                        reply: { messageReference: vote_message_id }
-                    });
-                    current_text = '';
-                }
-                else {
-                    const split_pos = current_text.lastIndexOf('```');
-                    if (split_pos === -1) {
-                        send_long_message(current_text, vote_message_id, channel);
-                        current_text = '';
-                    }
-                    else {
-                        const first_part = current_text.substring(0, split_pos);
-                        if (first_part.length <= 2000) {
-                            channel.send({
-                                content: first_part,
-                                reply: { messageReference: vote_message_id }
-                            });
-                        }
-                        else {
-                            send_long_message(first_part, vote_message_id, channel);
-                        }
-                        const second_part = current_text.substring(split_pos);
-                        if (second_part.length <= 2000) {
-                            channel.send({
-                                content: second_part,
-                                reply: { messageReference: vote_message_id }
-                            });
-                        }
-                        else {
-                            send_long_message(second_part, vote_message_id, channel);
-                        }
-                        current_text = '';
-                    }
-                }
-            }
-            current_text = current_text + current_line + '\n';
-        }
-        if (current_text.length > 0) {
-            if (current_text.length >= 2000) {
-                send_long_message(current_text, vote_message_id, channel);
-            }
-            else {
-                channel.send({
-                    content: current_text,
-                    reply: { messageReference: vote_message_id }
-                });
-            }
-        }
+        let rationale_text = `VOTE: **${vote.title}**\n__Vote Rationales:__\n\n**Yes:**\n`;
+        send_rationale_segment(vote.yes, rationale_text, vote_message_id, channel);
+        rationale_text = `**No:**\n`;
+        send_rationale_segment(vote.no, rationale_text, vote_message_id, channel);
+        rationale_text = `**Abstain:**\n`;
+        send_rationale_segment(vote.abstain, rationale_text, vote_message_id, channel);
     }
 }
 
