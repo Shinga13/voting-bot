@@ -41,10 +41,14 @@ async function handle_embed_click(vote_title, button_type, interaction) {
                 });
             }
             const ballot = current_vote.ballots[current_vote.voters[user_id][selected_id]];
+            let rationale = ballot.rationale;
+            if (rationale.length > 1800) {
+                rationale = rationale.substring(0, 1800) + '...'
+            }
             interaction.followUp({
                 content: '__**Ballot**__\n**Identification:** '
                         + `${selected_id}\n**Decision:** *${ballot.decision}*\n`
-                        + `**Rationale:** ${ballot.rationale}`,
+                        + `**Rationale:** ${rationale}`,
                 flags: MessageFlags.Ephemeral
             });
         }
@@ -157,9 +161,13 @@ async function handle_embed_click(vote_title, button_type, interaction) {
                 .setLabel('Cancel')
                 .setStyle(ButtonStyle.Secondary)
         );
+        let rationale = ballot.rationale;
+        if (rationale.length > 1800) {
+            rationale = rationale.substring(0, 1800) + '...'
+        }
         const confirm_response = await interaction.editReply({
             content: `${edit_text}**Identification:** ${selected_id}\n`
-                    + `**Decision:** *${ballot.decision}*\n**Rationale:** ${ballot.rationale}`,
+                    + `**Decision:** *${ballot.decision}*\n**Rationale:** ${rationale}`,
             components: [confirm_buttons]
         });
         try {
@@ -171,7 +179,7 @@ async function handle_embed_click(vote_title, button_type, interaction) {
                 interaction.editReply({
                     content: `${edit_text}**Identification:** ${selected_id}\n`
                             + `**Decision:** *${ballot.decision}*\n`
-                            + `**Rationale:** ${ballot.rationale}\n\n`
+                            + `**Rationale:** ${rationale}\n\n`
                             + '**Vote saved.**',
                     components: []
                 });

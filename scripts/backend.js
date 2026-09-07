@@ -425,36 +425,7 @@ async function close_vote(vote, client, guild_id) {
         message => message.edit({ embeds: [new_embed], components: [] })
     );
     if (client.vote_settings[guild_id].display_rationales) {
-        const rationale_text = `VOTE: **${vote.title}**\n__Vote Rationales:__\n\n`
-            + `**Yes:**\n${join_rationales(yes_rationales)}\n`
-            + `**No:**\n${join_rationales(no_rationales)}\n`
-            + `**Abstain:**\n${join_rationales(abstain_rationales)}`
-        if (rationale_text.length < 2000) {
-            channel.send({
-                content: rationale_text,
-                reply: { messageReference: vote.message_id }
-            });
-        }
-        else {
-            const rationale_lines = rationale_text.split('\n');
-            let current_text = '';
-            for (let current_line of rationale_lines) {
-                if (current_line.length + current_text.length + 1 >= 2000) {
-                    channel.send({
-                        content: current_text,
-                        reply: { messageReference: vote.message_id }
-                    });
-                    current_text = '';
-                }
-                current_text = current_text + current_line + '\n';
-            }
-            if (current_text.length > 0) {
-                channel.send({
-                    content: current_text,
-                    reply: { messageReference: vote.message_id }
-                });
-            }
-        }
+        create_rationale_messages(archived_vote, vote.message_id, channel);
     }
     store_archived_vote(archived_vote, guild_id);
     delete client.active_votes[guild_id][vote.title];
@@ -465,9 +436,102 @@ async function close_vote(vote, client, guild_id) {
 function join_rationales(rationale_list) {
     let out = '';
     for (let rationale of rationale_list) {
-        out = out + `- \`${rationale}\`\n`;
+        out = out + `\`\`\`${rationale}\`\`\`\n`;
     }
     return out;
+}
+
+function send_long_message(message, vote_message_id, channel) {
+    let text = '> rationale start\n';
+    let do_reply = true;
+    const parts = message.split(' ');
+    for (let part of parts) {
+        if (text.length + part.length + 1 >= 2000) {
+            channel.send({
+                content: text,
+                reply: do_reply ? { messageReference: vote_message_id } : undefined
+            });
+            text = '';
+            do_reply = false;
+        }
+        text = text + ' ' + part;
+    }
+    if (text.length > 0) {
+        channel.send({
+            content: text + '\n> rationale end\n',
+            reply: do_reply ? { messageReference: vote_message_id } : undefined
+        });
+    }
+}
+
+function create_rationale_messages(vote, vote_message_id, channel) {
+    const rationale_text = `VOTE: **${vote.title}**\n__Vote Rationales:__\n\n`
+        + `**Yes:**\n${join_rationales(vote.yes)}\n\n`
+        + `**No:**\n${join_rationales(vote.no)}\n\n`
+        + `**Abstain:**\n${join_rationales(vote.abstain)}`
+    if (rationale_text.length < 2000) {
+        channel.send({
+            content: rationale_text,
+            reply: { messageReference: vote_message_id }
+        });
+    }
+    else {
+        const rationale_lines = rationale_text.split('\n');
+        let current_text = '';
+        for (let current_line of rationale_lines) {
+            if (current_line.length + current_text.length + 1 >= 2000) {
+                if ((current_text.split('```').length - 1) % 2 === 0) {
+                    channel.send({
+                        content: current_text,
+                        reply: { messageReference: vote_message_id }
+                    });
+                    current_text = '';
+                }
+                else {
+                    const split_pos = current_text.lastIndexOf('```');
+                    if (split_pos === -1) {
+                        send_long_message(current_text, vote_message_id, channel);
+                        current_text = '';
+                    }
+                    else {
+                        const first_part = current_text.substring(0, split_pos);
+                        if (first_part.length <= 2000) {
+                            channel.send({
+                                content: first_part,
+                                reply: { messageReference: vote_message_id }
+                            });
+                        }
+                        else {
+                            send_long_message(first_part, vote_message_id, channel);
+                        }
+                        const second_part = current_text.substring(split_pos);
+                        if (second_part.length <= 2000) {
+                            channel.send({
+                                content: second_part,
+                                reply: { messageReference: vote_message_id }
+                            });
+                        }
+                        else {
+                            send_long_message(second_part, vote_message_id, channel);
+                        }
+                        current_text = '';
+                    }
+                }
+            }
+            current_text = current_text + current_line + '\n';
+        }
+        if (current_text.length > 0) {
+            if (current_text.length >= 2000) {
+                send_long_message(current_text, vote_message_id, channel);
+            }
+            else {
+                channel.send({
+                    content: current_text,
+                    reply: { messageReference: vote_message_id }
+                });
+            }
+        }
+    }
 }
 
 function get_valid_identifications(user_id, guild_id, client, member) {
@@ -689,4 +753,5 @@ module.exports = {
     schedule_guild_votes: schedule_guild_votes,
     clear_scheduled_actions: clear_scheduled_actions,
     join_rationales: join_rationales,
+    create_rationale_messages: create_rationale_messages
 }

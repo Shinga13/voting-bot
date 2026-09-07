@@ -6,7 +6,7 @@ const {
     StringSelectMenuOptionBuilder,
     PermissionFlagsBits
 } = require('discord.js');
-const { create_archived_embed, join_rationales } = require('../scripts/backend.js');
+const { create_archived_embed, create_rationale_messages } = require('../scripts/backend.js');
 const { get_archived_votes, get_archived_vote_data } = require('../scripts/storage.js');
 
 module.exports = {
@@ -82,36 +82,7 @@ module.exports = {
                 embeds: [vote_embed]
             });
             if (interaction.client.vote_settings[guild_id].display_rationales) {
-                const rationale_text = `VOTE: **${vote.title}**\n__Vote Rationales:__\n\n`
-                    + `**Yes:**\n${join_rationales(vote.yes)}\n`
-                    + `**No:**\n${join_rationales(vote.no)}\n`
-                    + `**Abstain:**\n${join_rationales(vote.abstain)}`
-                if (rationale_text.length < 2000) {
-                    interaction.channel.send({
-                        content: rationale_text,
-                        reply: { messageReference: vote_message.id }
-                    });
-                }
-                else {
-                    const rationale_lines = rationale_text.split('\n');
-                    let current_text = '';
-                    for (let current_line of rationale_lines) {
-                        if (current_line.length + current_text.length + 1 >= 2000) {
-                            interaction.channel.send({
-                                content: current_text,
-                                reply: { messageReference: vote_message.id }
-                            });
-                            current_text = '';
-                        }
-                        current_text = current_text + current_line + '\n';
-                    }
-                    if (current_text.length > 0) {
-                        interaction.channel.send({
-                            content: current_text,
-                            reply: { messageReference: vote_message.id }
-                        });
-                    }
-                }
+                create_rationale_messages(vote, vote_message.id, interaction.channel);
             }
         }
     }
